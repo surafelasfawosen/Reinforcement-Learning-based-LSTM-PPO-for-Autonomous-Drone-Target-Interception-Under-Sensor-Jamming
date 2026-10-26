@@ -56,11 +56,11 @@ class DroneAntiJammingEnv(gym.Env):
         self.arena_z = (0.1, 7.0)
 
         # Reward weights
-        self.w_closure = 2.0
-        self.w_hit = 100.0
-        self.w_jerk = 0.08
-        self.w_jam_drift = 0.04
-        self.w_crash = 60.0
+        self.w_closure = 3.0
+        self.w_hit = 150.0
+        self.w_jerk = 0.05
+        self.w_jam_drift = 0.05
+        self.w_crash = 25.0
         self.intercept_threshold = 0.35  # meters (kinetic interception capture threshold)
 
         # Subsystems
@@ -86,14 +86,21 @@ class DroneAntiJammingEnv(gym.Env):
 
         # Drone start position: near origin with random jitter
         drone_start = np.array([
-            np.random.uniform(-1.0, 1.0),
-            np.random.uniform(-1.0, 1.0),
-            np.random.uniform(1.0, 2.0)
+            np.random.uniform(-0.5, 0.5),
+            np.random.uniform(-0.5, 0.5),
+            np.random.uniform(1.2, 2.0)
         ], dtype=np.float32)
         self.drone.reset(start_pos=drone_start, mass_variation=mass_var, wind_gust=wind)
 
-        # Target reset
-        target_pos = self.target.reset(specific_mode=self.default_target_mode)
+        # Target reset: ensure minimum standoff distance (2.5m - 4.5m)
+        angle = np.random.uniform(0, 2 * np.pi)
+        dist = np.random.uniform(2.5, 4.5)
+        tgt_pos = np.array([
+            drone_start[0] + dist * np.cos(angle),
+            drone_start[1] + dist * np.sin(angle),
+            np.random.uniform(1.2, 3.0)
+        ], dtype=np.float32)
+        target_pos = self.target.reset(specific_mode=self.default_target_mode, initial_pos=tgt_pos)
 
         # Jamming reset
         force_jam = False
@@ -185,19 +192,19 @@ class DroneAntiJammingEnv(gym.Env):
         # 1. Distance closure reward (potential-based dense gradient)
         closure_reward = self.w_closure * (self.prev_distance - current_distance)
 
-        # 2. Line-of-Sight closing velocity: - (v_rel . unit_los)
+        # 2. Line-of-Sight closing velocity: v_rel . unit_los (positive when approaching target)
         true_p_rel = self.target.position - self.drone.pos
         p_rel_norm = max(current_distance, 0.1)
         unit_los = true_p_rel / p_rel_norm
         rel_vel = self.drone.vel - self.target.velocity
-        closing_vel = float(-np.dot(rel_vel, unit_los))
-        closing_reward = 0.4 * np.clip(closing_vel, -2.0, 4.0)
+        closing_vel = float(np.dot(rel_vel, unit_los))
+        closing_reward = 0.5 * np.clip(closing_vel, -1.0, 4.0)
 
-        # 3. Upright attitude shaping (encourage keeping vertical thrust aligned with gravity)
+        # 3. Upright attitude shaping (penalize excessive tilt, eliminates positive alive-bonus cheat)
         g_body = self.drone.get_gravity_vector()
-        upright_reward = 0.15 * float(g_body[2])  # g_body[2] = cos(pitch)*cos(roll)
+        upright_penalty = -0.2 * float(max(0.0, 1.0 - g_body[2]))
 
-        # 4. Stand-off proximity gradient
+        # 4. Stand-off proximity gradient (penalizes lingering away from target)
         dist_cost = -0.05 * current_distance
 
         # 5. Terminal interception bonus
@@ -215,7 +222,7 @@ class DroneAntiJammingEnv(gym.Env):
         # 8. Controlled crash penalty (avoids policy paralysis)
         crash_penalty = -25.0 if crash else 0.0
 
-        total_reward = (closure_reward + closing_reward + upright_reward + dist_cost +
+        total_reward = (closure_reward + closing_reward + upright_penalty + dist_cost +
                         hit_bonus + jerk_penalty + jam_penalty + crash_penalty)
         return float(total_reward)
 

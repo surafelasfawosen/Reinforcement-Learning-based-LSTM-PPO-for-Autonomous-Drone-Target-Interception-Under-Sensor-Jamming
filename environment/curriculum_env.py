@@ -52,10 +52,10 @@ class CurriculumDroneEnv(gym.Env):
         # Reward Weights
         self.w_closure = 3.0
         self.w_dist_penalty = 0.05
-        self.w_hit = 120.0
+        self.w_hit = 150.0
         self.w_jerk = 0.05
         self.w_jam_drift = 0.05
-        self.w_crash = 50.0
+        self.w_crash = 25.0
         self.intercept_threshold = 0.35  # meters
 
         # Subsystems
@@ -114,14 +114,28 @@ class CurriculumDroneEnv(gym.Env):
             self.jamming.reset(force_jammed=False)
 
         elif self.stage == 3:
-            # Stage 3: Moving target with linear velocity
-            self.target.reset(specific_mode=TargetMode.LINEAR)
+            # Stage 3: Moving target with linear velocity (standoff 2.5m - 5.0m)
+            angle = np.random.uniform(0, 2 * np.pi)
+            dist = np.random.uniform(2.5, 5.0)
+            tgt_pos = np.array([
+                drone_start[0] + dist * np.cos(angle),
+                drone_start[1] + dist * np.sin(angle),
+                np.random.uniform(1.2, 3.5)
+            ], dtype=np.float32)
+            self.target.reset(specific_mode=TargetMode.LINEAR, initial_pos=tgt_pos)
             self.jamming.reset(force_jammed=(np.random.random() < 0.3), specific_mode=JammingMode.GAUSSIAN)
 
         else:
-            # Stage 4: Full Electronic Warfare (Random attack mode, evasive target)
+            # Stage 4: Full Electronic Warfare (Random attack mode, evasive target, standoff 2.5m - 5.0m)
+            angle = np.random.uniform(0, 2 * np.pi)
+            dist = np.random.uniform(2.5, 5.0)
+            tgt_pos = np.array([
+                drone_start[0] + dist * np.cos(angle),
+                drone_start[1] + dist * np.sin(angle),
+                np.random.uniform(1.2, 3.5)
+            ], dtype=np.float32)
             tgt_mode = TargetMode.SINUSOIDAL if np.random.random() < 0.5 else TargetMode.LINEAR
-            self.target.reset(specific_mode=tgt_mode)
+            self.target.reset(specific_mode=tgt_mode, initial_pos=tgt_pos)
             attack_mode = np.random.choice([
                 JammingMode.GAUSSIAN,
                 JammingMode.SPIKE,
@@ -194,17 +208,17 @@ class CurriculumDroneEnv(gym.Env):
         # Distance closure gradient
         closure = self.w_closure * (self.prev_distance - current_distance)
 
-        # Line-of-sight closing velocity
+        # Line-of-sight closing velocity: v_rel . unit_los (positive when approaching target)
         true_p_rel = self.target.position - self.drone.pos
         p_rel_norm = max(current_distance, 0.1)
         unit_los = true_p_rel / p_rel_norm
         rel_vel = self.drone.vel - self.target.velocity
-        closing_vel = float(-np.dot(rel_vel, unit_los))
-        closing_reward = 0.4 * np.clip(closing_vel, -2.0, 4.0)
+        closing_vel = float(np.dot(rel_vel, unit_los))
+        closing_reward = 0.5 * np.clip(closing_vel, -1.0, 4.0)
 
-        # Upright attitude shaping
+        # Upright attitude shaping (penalize excessive tilt, eliminates positive alive-bonus cheat)
         g_body = self.drone.get_gravity_vector()
-        upright_reward = 0.15 * float(g_body[2])
+        upright_penalty = -0.2 * float(max(0.0, 1.0 - g_body[2]))
 
         dist_cost = -self.w_dist_penalty * current_distance
         hit_bonus = 150.0 if hit else 0.0
@@ -216,7 +230,7 @@ class CurriculumDroneEnv(gym.Env):
 
         crash_cost = -25.0 if crash else 0.0
 
-        return float(closure + closing_reward + upright_reward + dist_cost + hit_bonus + jerk_cost + jam_penalty + crash_cost)
+        return float(closure + closing_reward + upright_penalty + dist_cost + hit_bonus + jerk_cost + jam_penalty + crash_cost)
 
     def _get_info(self, current_distance: float, hit: bool, crash: bool) -> dict:
         return {
