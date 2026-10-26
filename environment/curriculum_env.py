@@ -186,19 +186,29 @@ class CurriculumDroneEnv(gym.Env):
         return obs, reward, terminated, truncated, info
 
     def _get_observation(self) -> np.ndarray:
-        true_p_rel = self.target.position - self.drone.pos
-        obs_p_rel = self.jamming.corrupt_relative_position(true_p_rel, clip_range=15.0)
+        # Rotation matrix from body to world (R.T transforms world -> body)
+        R = self.drone._euler_to_rotation_matrix(self.drone.rpy)
+        R_inv = R.T
 
-        v_drone, w_drone = self.drone.get_imu_readings()
+        # Target relative position in drone BODY frame (resolves heading/yaw ambiguity)
+        true_p_rel_world = self.target.position - self.drone.pos
+        true_p_rel_body = R_inv @ true_p_rel_world
+
+        # Corrupt relative position in sensor frame
+        obs_p_rel = self.jamming.corrupt_relative_position(true_p_rel_body, clip_range=15.0)
+
+        # Onboard IMU velocity projected in body frame
+        v_drone_world, w_drone = self.drone.get_imu_readings()
+        v_drone_body = R_inv @ v_drone_world
         g_body = self.drone.get_gravity_vector()
 
-        v_drone = np.clip(v_drone, -10.0, 10.0)
+        v_drone_body = np.clip(v_drone_body, -10.0, 10.0)
         w_drone = np.clip(w_drone, -np.pi, np.pi)
         j_flag_val = 1.0 if self.jamming.is_jammed else 0.0
 
         return np.concatenate([
             obs_p_rel,
-            v_drone,
+            v_drone_body,
             w_drone,
             g_body,
             np.array([j_flag_val], dtype=np.float32)
