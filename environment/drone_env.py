@@ -61,7 +61,7 @@ class DroneAntiJammingEnv(gym.Env):
         self.w_jerk = 0.08
         self.w_jam_drift = 0.04
         self.w_crash = 60.0
-        self.intercept_threshold = 1.2  # meters (aerial interception acquisition basket)
+        self.intercept_threshold = 0.35  # meters (kinetic interception capture threshold)
 
         # Subsystems
         self.drone = DroneDynamics(mass=1.0, arm_length=0.17, dt=self.dt)
