@@ -1,11 +1,11 @@
-# 🇪🇹 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
+# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/> 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
 
 ### A Deep Recurrent Reinforcement Learning Framework for Resilient UAV Target Pursuit in GPS-Denied & Adversarial Electronic Warfare Environments
 
-**Developer & Author:** [Surafel Asfawosen](https://github.com/surafelasfawosen) (Ethiopia 🇪🇹)  
+**Developer & Author:** [Surafel Asfawosen](https://github.com/surafelasfawosen) <img src="https://flagcdn.com/20x15/et.png" alt="Ethiopia" width="18" style="vertical-align: middle;"/> (Ethiopia)  
 **Project Domain:** Autonomous Guidance, Navigation & Control (GNC) • Deep Reinforcement Learning • Electronic Warfare Resilient Robotics • Adversarial POMDPs  
 
-[![Ethiopia](https://img.shields.io/badge/Origin-Ethiopia%20🇪🇹-009A44.svg)](https://en.wikipedia.org/wiki/Ethiopia)
+[![Ethiopia](https://img.shields.io/badge/Country-Ethiopia-009A44.svg)](https://en.wikipedia.org/wiki/Ethiopia)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 [![Gymnasium](https://img.shields.io/badge/Gymnasium-v1.0+-008000.svg)](https://gymnasium.farama.org/)
@@ -124,10 +124,10 @@ To eliminate the 0% exploration failure, the environment implements an adaptive 
 ### 5. Multi-Objective Guidance Reward Function
 The agent is trained with a mathematically shaped reward function engineered to prevent motor burnout, encourage rapid closure, and eliminate alive-bonus exploitation:
 
-$$R_t = R_{\text{closure}} + R_{\text{closing\_vel}} + R_{\text{upright}} + R_{\text{proximity}} + R_{\text{dist}} + R_{\text{hit}} + R_{\text{jerk}} + R_{\text{jam}} + R_{\text{crash}}$$
+$$R_t = R_{\text{closure}} + R_{\text{los}} + R_{\text{upright}} + R_{\text{proximity}} + R_{\text{dist}} + R_{\text{hit}} + R_{\text{jerk}} + R_{\text{jam}} + R_{\text{crash}}$$
 
 * **Distance Closure Gradient:** $R_{\text{closure}} = 3.0 \cdot (d_{t-1} - d_t)$ (Potential-based dense shaping).
-* **Line-of-Sight Closing Velocity:** $R_{\text{closing\_vel}} = 0.5 \cdot \text{clip}(\mathbf{v}_{\text{rel}} \cdot \hat{\mathbf{u}}_{\text{los}}, -1.0, 4.0)$ (Rewards true pursuit momentum).
+* **Line-of-Sight Closing Velocity:** $R_{\text{los}} = 0.5 \cdot \text{clip}(\mathbf{v}_{\text{rel}} \cdot \hat{\mathbf{u}}_{\text{los}}, -1.0, 4.0)$ (Rewards true pursuit momentum).
 * **Upright Attitude Penalty:** $R_{\text{upright}} = -0.3 \cdot \max(0.0, 1.0 - g_{\text{body}, z})$ (Penalizes inverted or excessive tilt flight).
 * **Hyperbolic Proximity Reward:** $R_{\text{proximity}} = \frac{0.5}{d_t + 0.1}$ (Dense hyperbolic gradient increasing near the target).
 * **Stand-off Distance Penalty:** $R_{\text{dist}} = -0.05 \cdot d_t$ (Penalizes lingering far from the objective).
