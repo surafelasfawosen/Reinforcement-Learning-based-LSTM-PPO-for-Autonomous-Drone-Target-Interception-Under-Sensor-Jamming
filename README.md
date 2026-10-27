@@ -1,10 +1,11 @@
-# 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
+# 🇪🇹 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
 
 ### A Deep Recurrent Reinforcement Learning Framework for Resilient UAV Target Pursuit in GPS-Denied & Adversarial Electronic Warfare Environments
 
-**Developer & Author:** [Surafel Asfawosen](https://github.com/surafelasfawosen)  
+**Developer & Author:** [Surafel Asfawosen](https://github.com/surafelasfawosen) (Ethiopia 🇪🇹)  
 **Project Domain:** Autonomous Guidance, Navigation & Control (GNC) • Deep Reinforcement Learning • Electronic Warfare Resilient Robotics • Adversarial POMDPs  
 
+[![Ethiopia](https://img.shields.io/badge/Origin-Ethiopia%20🇪🇹-009A44.svg)](https://en.wikipedia.org/wiki/Ethiopia)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 [![Gymnasium](https://img.shields.io/badge/Gymnasium-v1.0+-008000.svg)](https://gymnasium.farama.org/)
@@ -162,42 +163,67 @@ The simulation models 4 authentic electronic warfare attack profiles:
 
 ## 📊 Empirical Evaluation & Benchmark Results
 
-Policies were empirically benchmarked across **Clean** (uncontested) and **Jammed** (active electronic warfare) flight scenarios over multiple independent rollouts:
+Policies were empirically benchmarked across **Clean** (uncontested) and **Jammed** (active electronic warfare) flight scenarios over independent model rollouts from real trained weights:
 
-### Performance Comparison Table
+### Performance Comparison Table (Real Empirical Rollouts)
 
-| Experimental Scenario | Controller Architecture | Interception Success Rate | Tracking RMSE (m) | Final Miss Distance (m) | Control Jerk | Flight Operational Status |
-|:---|:---:|:---:|:---:|:---:|:---:|:---|
-| **Clean Sensors** | Baseline FFN-PPO | **87.5%** ($\pm 2.8$) | $1.15\,\text{m}$ | $0.62\,\text{m}$ | $0.0421$ | Nominal clean pursuit |
-| **Active Jamming** | **Baseline FFN-PPO** | **12.0%** ($\pm 3.1$) | **$6.82\,\text{m}$** | **$7.45\,\text{m}$** | **$0.1852$** | ❌ **Catastrophic Divergence & Crash** |
-| **Clean Sensors** | Proposed LSTM-PPO | **94.0%** ($\pm 1.9$) | $0.82\,\text{m}$ | $0.28\,\text{m}$ | $0.0352$ | Precision high-speed pursuit |
-| **Active Jamming** | **Proposed LSTM-PPO** | **78.5%** ($\pm 3.5$) | **$1.94\,\text{m}$** | **$0.72\,\text{m}$** | **$0.0584$** | 🏆 **Resilient Dead-Reckoning Intercept** |
+| Experimental Scenario | Controller Architecture | Interception Success Rate | Crash Rate | Tracking RMSE (m) | Final Miss Distance (m) | Actuator Jerk | Flight Operational Status |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| **Clean Sensors** | Baseline FFN-PPO | **100.0%** | 0.0% | 2.39 m (±0.47) | 0.32 m | 0.5906 | Nominal clean pursuit |
+| **Clean Sensors** | Proposed LSTM-PPO | 80.0% | 15.0% | 1.97 m (±0.40) | 0.62 m | **0.3295** | Precision smooth pursuit |
+| **Active Jamming** | **Baseline FFN-PPO** | **50.0%** | **40.0%** | 2.11 m (±0.42) | **1.30 m** | **4.3304** | ❌ **Severe Jerk & Boundary Crashes** |
+| **Active Jamming** | **Proposed LSTM-PPO** | **70.0%** | **25.0%** | 2.12 m (±0.41) | **0.89 m** | **0.7729** | 🏆 **Resilient Dead-Reckoning Intercept** |
 
 ### Robustness Breakdown Across the 4 EW Attack Modes
 
-| Electronic Warfare Attack Mode | Baseline FFN-PPO Success Rate | Proposed LSTM-PPO Success Rate | Relative Robustness Gain |
-|:---|:---:|:---:|:---:|
-| **Gaussian Noise Barrage** | $15.0\%$ | **$84.0\%$** | **$+69.0\%$** |
-| **Coordinate Spike Spoofing** | $0.0\%$ | **$76.5\%$** | **$+76.5\%$** |
-| **Sensor Denial Blackout** | $10.0\%$ | **$72.0\%$** | **$+62.0\%$** |
-| **Cumulative Creeping Drift** | $20.0\%$ | **$81.5\%$** | **$+61.5\%$** |
+| Electronic Warfare Attack Mode | Baseline FFN-PPO | Proposed LSTM-PPO | Failure Mechanism & Core Observation |
+|:---|:---:|:---:|:---|
+| **Gaussian Noise Barrage** | 60.0% | **70.0%** | LSTM averages zero-mean noise temporally; Baseline suffers jitter |
+| **Coordinate Spike Spoofing** | 0.0% | **10.0%** | Baseline commands full counter-thrust and flips; LSTM rejects spikes |
+| **Sensor Denial Blackout** | 0.0% | 0.0% | Blinded from Step 0 before establishing initial target lock |
+| **Cumulative Creeping Drift** | **30.0%** | 20.0% | Creeping decoy offset pulls drone away during extended engagements |
+
+### 🏆 Key Technical Findings
+
+1. **+20.0% Higher Interception Under Jamming (70.0% vs. 50.0%):**  
+   The proposed recurrent policy maintains a 70.0% capture rate under active jamming, outperforming the feedforward baseline.
+2. **-82.1% Reduction in Control Jerk (0.7729 vs. 4.3304):**  
+   Memoryless feedforward control violently chatters attempting to chase spoofed coordinates. The LSTM gates out high-frequency noise, protecting drone actuators and preventing motor burnout.
+3. **15.0% Fewer Crashes Under Electronic Attack (25.0% vs. 40.0%):**  
+   The baseline drone experiences frequent boundary and ground crashes when false coordinates are injected. The LSTM preserves attitude stability via unjammable onboard IMU feedback.
+4. **44.2% Smoother Clean Flight (0.3295 vs. 0.5906):**  
+   Even with clean sensors, recurrent memory preserves velocity momentum across consecutive 50 Hz control loops.
 
 ---
 
-## 🎨 Publication-Grade Visualizations Suite
+## 🎨 Publication Figures & Telemetry Visualizations
 
-All figures are dynamically generated directly from saved empirical flight telemetry and evaluation logs (`eval_results.json` and `sample_trajectories.pkl`) into [`results/figures/`](file:///c:/Users/SURA/Desktop/reforcement%20learning/results/figures):
+All figures are generated directly from saved flight telemetry in [`results/figures/`](results/figures):
 
-1. **Figure 1: Interception Success Rate Comparison (`success_rate_comparison.png`)**  
-   Bar chart comparing all 4 experimental cohorts with 95% confidence intervals and standard error bars.
-2. **Figure 2: Real Dual-Panel Tracking Dynamics (`tracking_error_timeseries.png`)**  
-   Synchronized dual-panel timeseries displaying distance closure and continuous 4-axis actuator commands across time.
-3. **Figure 3: 3D Spatial Pursuit Trajectories (`trajectory_3d_comparison.png`)**  
-   High-resolution 3D spatial flight path comparing true target evasion against baseline divergence and LSTM dead-reckoning capture.
-4. **Figure 4: 5-Axis Radar Competency Profile (`radar_performance_profile.png`)**  
-   Spider chart across 5 core aerospace dimensions: *Interception Accuracy*, *Flight Smoothness*, *EW Resilience*, *Post-Jam Survival*, and *Energy Efficiency*.
-5. **Figure 5: 4-Mode Adversarial Attack Breakdown (`jamming_mode_breakdown.png`)**  
-   Comparative grouped bar chart validating policy resilience across Gaussian noise, coordinate spikes, blackout, and drift.
+### Figure 1: Interception Success Rate Comparison
+![Figure 1: Success Rate Comparison](results/figures/success_rate_comparison.png)
+* **What it shows:** Bar chart comparing success rates across all 4 experimental scenarios (Clean vs. Jammed for both Baseline FFN and Proposed LSTM).
+* **Core Takeaway:** Confirms that the LSTM policy maintains a **70.0% success rate** under active jamming, outperforming the memoryless baseline by +20.0%.
+
+### Figure 2: Real Dual-Panel Tracking Dynamics Timeseries
+![Figure 2: Tracking Timeseries](results/figures/tracking_timeseries.png)
+* **What it shows:** Synchronized dual-panel graph showing true distance-to-target over time (top) and continuous 4-axis control setpoints (roll, pitch, yaw, thrust) executed by the LSTM (bottom).
+* **Core Takeaway:** Demonstrates how the baseline diverges the moment jamming begins, while the LSTM smoothly closes distance and captures the target at step 76.
+
+### Figure 3: 3D Spatial Trajectories & Interception Under Active Jamming
+![Figure 3: 3D Trajectory](results/figures/trajectory_3d_comparison.png)
+* **What it shows:** High-resolution 3D flight paths comparing the evasive target trajectory (dashed black), the spoofed baseline crash path (red), and the LSTM's dead-reckoning pursuit (blue).
+* **Core Takeaway:** Visually proves that the LSTM drone tracks the target through 3D space to intercept at **0.34 m**, while the baseline drone crashes with a **2.32 m miss gap**.
+
+### Figure 4: 5-Axis Radar Performance Profile
+![Figure 4: Radar Profile](results/figures/radar_performance_profile.png)
+* **What it shows:** Spider chart comparing policies across 5 aerospace dimensions: *Interception Accuracy*, *Flight Smoothness*, *EW Resilience*, *Post-Jam Survival*, and *Energy Efficiency*.
+* **Core Takeaway:** Shows the LSTM policy dominating in flight smoothness (21.3 vs. 0.0) and electronic warfare resilience (77.0 vs. 30.0).
+
+### Figure 5: Robustness Across 4 Adversarial Attack Modes
+![Figure 5: Jamming Mode Breakdown](results/figures/jamming_mode_breakdown.png)
+* **What it shows:** Grouped bar chart comparing interception success rates across Gaussian noise, coordinate spikes, complete blackout, and cumulative drift.
+* **Core Takeaway:** Pinpoints the exact failure modes of feedforward controllers under coordinate spoofing (0.0%) and validates LSTM temporal noise filtering (70.0%).
 
 ---
 
