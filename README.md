@@ -16,7 +16,7 @@
 
 ## 📌 Executive Summary
 
-Autonomous unmanned aerial vehicle (UAV) interception of dynamic airborne targets is a pivotal challenge in modern aerospace defense, airspace interdiction, and counter-UAS operations. In contested airspace, hostile assets deploy active **Electronic Warfare (EW)** countermeasures—including wideband radio-frequency (RF) jamming, Global Navigation Satellite System (GNSS) spoofing, sensor blackouts, and deceptive clock drift.
+Autonomous unmanned aerial vehicle (UAV) interception of dynamic airborne targets is a pivotal challenge in modern aerospace defense, airspace interdiction, and counter-UAS operations. In contested airspace, hostile assets deploy active **Electronic Warfare (EW)** countermeasures including wideband radio-frequency (RF) jamming, Global Navigation Satellite System (GNSS) spoofing, sensor blackouts, and deceptive clock drift.
 
 Traditional autopilots (PID, LQR) and standard **memoryless deep reinforcement learning algorithms** (such as standard Feedforward PPO) operate under the **Markovian assumption** of full state observability. When target coordinates are abruptly spoofed or wiped out by jamming, feedforward policies immediately execute erratic control commands, leading to violent actuator chattering, uncontrolled flight divergence, and fatal crashes.
 
