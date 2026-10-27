@@ -146,7 +146,7 @@ def plot_tracking_error_timeseries(save_name: str = "tracking_error_timeseries.p
     # Mark interception on Subplot 1
     ax1.scatter([l_steps[-1]], [l_dists[-1]], color='#27ae60', s=140, marker='*', zorder=5, label=f'LSTM Interception (Step {l_steps[-1]})')
     ax1.annotate(
-        f'🎯 Intercept Achieved\n(Step {l_steps[-1]}, d={l_dists[-1]:.2f}m)',
+        f'★ Intercept Achieved\n(Step {l_steps[-1]}, d={l_dists[-1]:.2f}m)',
         xy=(l_steps[-1], l_dists[-1]),
         xytext=(-60, 35),
         textcoords='offset points',

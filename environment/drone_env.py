@@ -227,7 +227,7 @@ class DroneAntiJammingEnv(gym.Env):
             jam_penalty = -self.w_jam_drift * current_distance
 
         # 8. Controlled crash penalty (avoids policy paralysis)
-        crash_penalty = -25.0 if crash else 0.0
+        crash_cost = -self.w_crash if crash else 0.0
 
         total_reward = (closure_reward + closing_reward + upright_penalty + proximity_bonus +
                         dist_cost + hit_bonus + jerk_penalty + jam_penalty + crash_cost)

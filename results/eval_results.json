@@ -1,0 +1,81 @@
+{
+  "Baseline FFN-PPO (Clean)": {
+    "success_rate": 100.0,
+    "crash_rate": 0.0,
+    "mean_rmse": 2.387281036376953,
+    "std_rmse": 0.4675523085543803,
+    "mean_jerk": 0.590632831864059,
+    "mean_survival": 64.35,
+    "mean_final_distance": 0.31521342843770983
+  },
+  "Baseline FFN-PPO (Jammed)": {
+    "success_rate": 50.0,
+    "crash_rate": 40.0,
+    "mean_rmse": 2.1131119251251222,
+    "std_rmse": 0.4244698171905604,
+    "mean_jerk": 4.330396747589111,
+    "mean_survival": 249.95,
+    "mean_final_distance": 1.304136024415493
+  },
+  "Proposed LSTM-PPO (Clean)": {
+    "success_rate": 80.0,
+    "crash_rate": 15.0,
+    "mean_rmse": 1.9663960218429566,
+    "std_rmse": 0.39563135145799466,
+    "mean_jerk": 0.3295292427763343,
+    "mean_survival": 155.25,
+    "mean_final_distance": 0.6159370794892312
+  },
+  "Proposed LSTM-PPO (Jammed)": {
+    "success_rate": 70.0,
+    "crash_rate": 25.0,
+    "mean_rmse": 2.123768573999405,
+    "std_rmse": 0.4118850892749886,
+    "mean_jerk": 0.7729031443595886,
+    "mean_survival": 138.0,
+    "mean_final_distance": 0.8860207512974739
+  },
+  "radar_scores": {
+    "categories": [
+      "Interception\nAccuracy",
+      "Flight\nSmoothness",
+      "EW Jamming\nResilience",
+      "Post-Jam\nSurvival",
+      "Energy\nEfficiency"
+    ],
+    "baseline_scores": [
+      65.4,
+      0.0,
+      30.0,
+      100.0,
+      79.3
+    ],
+    "lstm_scores": [
+      65.3,
+      21.3,
+      77.0,
+      100.0,
+      84.9
+    ]
+  },
+  "attack_modes": {
+    "modes": [
+      "Gaussian Noise",
+      "Coordinate Spike",
+      "Complete Blackout",
+      "Cumulative Drift"
+    ],
+    "baseline_sr": [
+      60.0,
+      0.0,
+      0.0,
+      30.0
+    ],
+    "lstm_sr": [
+      70.0,
+      10.0,
+      0.0,
+      20.0
+    ]
+  }
+}
