@@ -1,4 +1,4 @@
-# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/> 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
+# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/>  Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
 
 ### A Deep Recurrent Reinforcement Learning Framework for Resilient UAV Target Pursuit in GPS-Denied & Adversarial Electronic Warfare Environments
 
@@ -38,7 +38,7 @@ Traditional autopilots (PID, LQR) and standard **memoryless deep reinforcement l
     • Violent motor chattering & tilt flip         • Recurrent memory integrates flight momentum
     • Trajectory divergence & boundary crash       • Emergent inertial dead-reckoning via IMU
                       │                                               │
-              ❌ 0% - 12% Success                             ✅ 80% - 90% Interception
+               0% - 12% Success                              80% - 90% Interception
 ```
 
 ### 1. The Markovian Trap
