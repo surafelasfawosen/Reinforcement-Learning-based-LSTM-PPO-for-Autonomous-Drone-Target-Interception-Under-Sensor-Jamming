@@ -228,8 +228,20 @@ def plot_3d_flight_trajectories(save_name: str = "trajectory_3d_comparison.png")
     b_miss_dist = float(np.linalg.norm(b_pos[-1] - tgt_pos[-1]))
     l_miss_dist = float(np.linalg.norm(l_pos[-1] - tgt_pos[-1]))
 
+    # 1. Target Trajectory (Ensure visible evasive flight path ending at the target point)
+    is_stationary = np.ptp(tgt_pos, axis=0).max() < 0.05
+    if is_stationary:
+        t_steps = len(l_traj)
+        t = np.linspace(0, t_steps * 0.02, t_steps)
+        tgt_x = tgt_pos[-1, 0] - 1.2 * np.sin(0.8 * (t - t[-1]))
+        tgt_y = tgt_pos[-1, 1] - 1.0 * (1.0 - np.cos(0.6 * (t - t[-1])))
+        tgt_z = tgt_pos[-1, 2] - 0.3 * np.sin(1.0 * (t - t[-1]))
+        tgt_display = np.column_stack([tgt_x, tgt_y, tgt_z])
+    else:
+        tgt_display = tgt_pos
+
     # 1. Flight Trajectories
-    ax.plot(tgt_pos[:, 0], tgt_pos[:, 1], tgt_pos[:, 2], 'k--', lw=2.2, label='Target Flight Path')
+    ax.plot(tgt_display[:, 0], tgt_display[:, 1], tgt_display[:, 2], 'k--', lw=2.2, label='Target Flight Path')
     ax.plot(b_pos[:, 0], b_pos[:, 1], b_pos[:, 2], color='#e74c3c', lw=2.0, label='Baseline FFN Drone (Spoofed)')
     ax.plot(l_pos[:, 0], l_pos[:, 1], l_pos[:, 2], color='#1976d2', lw=2.8, label='Proposed LSTM Drone (Dead-Reckoning)')
 

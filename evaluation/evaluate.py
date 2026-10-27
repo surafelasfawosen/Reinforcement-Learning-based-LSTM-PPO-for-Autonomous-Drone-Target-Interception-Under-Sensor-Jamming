@@ -35,7 +35,8 @@ def evaluate_agent(
 ) -> tuple:
     """Runs N evaluation rollouts for a model under specific jamming conditions."""
     from environment.jamming_model import JammingMode
-    env = DroneAntiJammingEnv(domain_randomization=False)
+    from environment.target_manager import TargetMode
+    env = DroneAntiJammingEnv(domain_randomization=False, target_mode=TargetMode.SINUSOIDAL)
     if specific_jamming_mode is not None:
         env.default_jamming_mode = specific_jamming_mode
         env.jamming.default_mode = specific_jamming_mode
