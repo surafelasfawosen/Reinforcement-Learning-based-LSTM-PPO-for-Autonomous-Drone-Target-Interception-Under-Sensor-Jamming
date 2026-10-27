@@ -43,12 +43,15 @@ def evaluate_agent(
     episode_metrics_list = []
     sample_trajectories = []
 
-    print(f"\n[EVAL] Running {n_episodes} episodes for: {scenario_name} (Force Jamming: {force_jamming})")
+    jam_onset_step = 40  # 0.8s clean target acquisition to build motion belief
 
     for ep in range(n_episodes):
-        obs, _ = env.reset(options={"force_jamming": force_jamming})
+        obs, _ = env.reset(options={"force_jamming": False})
+        env.jamming.is_jammed = False
         if specific_jamming_mode is not None:
             env.jamming.active_mode = specific_jamming_mode
+            env.jamming.default_mode = specific_jamming_mode
+
         done = False
         step = 0
         ep_trajectory = []
@@ -61,9 +64,15 @@ def evaluate_agent(
         crash = False
 
         while not done and step < 500:
-            if force_jamming and step >= 80:
+            # Electronic Warfare Jamming engages after acquisition phase
+            if force_jamming and step >= jam_onset_step:
                 env.jamming.is_jammed = True
-                env.jamming.active_mode = env.jamming.default_mode
+                if specific_jamming_mode is not None:
+                    env.jamming.active_mode = specific_jamming_mode
+                else:
+                    env.jamming.active_mode = env.jamming.default_mode
+            else:
+                env.jamming.is_jammed = False
 
             if is_recurrent:
                 action, lstm_states = model.predict(
@@ -194,11 +203,12 @@ def run_full_benchmark(n_episodes: int = 30):
     base_modes_sr = []
     lstm_modes_sr = []
 
+    n_mode_eps = min(n_episodes, 20)
     for mode_enum, mode_label in zip(ew_modes, mode_names):
         b_res, _ = evaluate_agent(
             model=baseline_model,
             is_recurrent=False,
-            n_episodes=10,
+            n_episodes=n_mode_eps,
             force_jamming=True,
             scenario_name=f"Baseline-{mode_label}",
             specific_jamming_mode=mode_enum
@@ -208,7 +218,7 @@ def run_full_benchmark(n_episodes: int = 30):
         l_res, _ = evaluate_agent(
             model=lstm_model,
             is_recurrent=True,
-            n_episodes=10,
+            n_episodes=n_mode_eps,
             force_jamming=True,
             scenario_name=f"LSTM-{mode_label}",
             specific_jamming_mode=mode_enum
