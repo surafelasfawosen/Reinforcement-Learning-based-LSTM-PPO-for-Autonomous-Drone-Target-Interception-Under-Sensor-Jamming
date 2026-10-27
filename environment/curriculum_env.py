@@ -56,7 +56,10 @@ class CurriculumDroneEnv(gym.Env):
         self.w_jerk = 0.05
         self.w_jam_drift = 0.05
         self.w_crash = 25.0
-        self.intercept_threshold = 0.35  # meters
+        # Intercept threshold scales from generous (1.0m) in Stage 1 to tight (0.35m) in Stage 4.
+        # This ensures the agent gets early positive experiences before the problem gets hard.
+        self.stage_thresholds = {1: 1.0, 2: 0.6, 3: 0.45, 4: 0.35}
+        self.intercept_threshold = self.stage_thresholds.get(self.stage, 0.35)
 
         # Subsystems
         self.drone = DroneDynamics(mass=1.0, arm_length=0.17, dt=self.dt)
@@ -71,6 +74,7 @@ class CurriculumDroneEnv(gym.Env):
     def set_stage(self, stage: int):
         """Update curriculum difficulty stage (1 to 4)."""
         self.stage = max(1, min(4, stage))
+        self.intercept_threshold = self.stage_thresholds.get(self.stage, 0.35)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -81,52 +85,53 @@ class CurriculumDroneEnv(gym.Env):
         if options and "stage" in options:
             self.set_stage(options["stage"])
 
-        # Domain Randomization (scaled with curriculum)
-        mass_var = np.random.uniform(-0.10, 0.10) if (self.domain_randomization and self.stage >= 2) else 0.0
-        wind = np.random.normal(0, 0.3, size=3).astype(np.float32) if (self.domain_randomization and self.stage >= 3) else np.zeros(3)
+        # Domain Randomization (scaled with curriculum — disabled in Stage 1 to prevent distraction)
+        mass_var = np.random.uniform(-0.10, 0.10) if (self.domain_randomization and self.stage >= 3) else 0.0
+        wind = np.random.normal(0, 0.3, size=3).astype(np.float32) if (self.domain_randomization and self.stage >= 4) else np.zeros(3)
 
         drone_start = np.array([0.0, 0.0, 1.5], dtype=np.float32)
         self.drone.reset(start_pos=drone_start, mass_variation=mass_var, wind_gust=wind)
 
         # Target placement according to curriculum stage
         if self.stage == 1:
-            # Stage 1: Close target (1.2m - 2.5m away)
+            # Stage 1: Very close target (0.4m - 1.2m).  Threshold=1.0m so the agent can
+            # physically reach it and get reward in its FIRST episodes, bootstrapping learning.
             angle = np.random.uniform(0, 2 * np.pi)
-            dist = np.random.uniform(1.2, 2.5)
+            dist = np.random.uniform(0.4, 1.2)
             tgt_pos = np.array([
                 drone_start[0] + dist * np.cos(angle),
                 drone_start[1] + dist * np.sin(angle),
-                np.random.uniform(1.2, 2.2)
+                np.clip(drone_start[2] + np.random.uniform(-0.3, 0.3), 0.5, 2.5)
             ], dtype=np.float32)
             self.target.reset(specific_mode=TargetMode.STATIONARY, initial_pos=tgt_pos)
             self.jamming.reset(force_jammed=False)
 
         elif self.stage == 2:
-            # Stage 2: Medium/Far target (2.5m - 5.0m away), stationary
+            # Stage 2: Medium target (1.5m - 3.0m away), stationary, no jamming
             angle = np.random.uniform(0, 2 * np.pi)
-            dist = np.random.uniform(2.5, 5.0)
+            dist = np.random.uniform(1.5, 3.0)
             tgt_pos = np.array([
                 drone_start[0] + dist * np.cos(angle),
                 drone_start[1] + dist * np.sin(angle),
-                np.random.uniform(1.0, 3.5)
+                np.random.uniform(0.8, 3.0)
             ], dtype=np.float32)
             self.target.reset(specific_mode=TargetMode.STATIONARY, initial_pos=tgt_pos)
             self.jamming.reset(force_jammed=False)
 
         elif self.stage == 3:
-            # Stage 3: Moving target with linear velocity (standoff 2.5m - 5.0m)
+            # Stage 3: Moving target (standoff 2.5m - 4.5m), mild jamming
             angle = np.random.uniform(0, 2 * np.pi)
-            dist = np.random.uniform(2.5, 5.0)
+            dist = np.random.uniform(2.5, 4.5)
             tgt_pos = np.array([
                 drone_start[0] + dist * np.cos(angle),
                 drone_start[1] + dist * np.sin(angle),
-                np.random.uniform(1.2, 3.5)
+                np.random.uniform(1.0, 3.5)
             ], dtype=np.float32)
             self.target.reset(specific_mode=TargetMode.LINEAR, initial_pos=tgt_pos)
             self.jamming.reset(force_jammed=(np.random.random() < 0.3), specific_mode=JammingMode.GAUSSIAN)
 
         else:
-            # Stage 4: Full Electronic Warfare (Random attack mode, evasive target, standoff 2.5m - 5.0m)
+            # Stage 4: Full Electronic Warfare (Random attack mode, evasive target)
             angle = np.random.uniform(0, 2 * np.pi)
             dist = np.random.uniform(2.5, 5.0)
             tgt_pos = np.array([
@@ -142,7 +147,7 @@ class CurriculumDroneEnv(gym.Env):
                 JammingMode.BLACKOUT,
                 JammingMode.DRIFT
             ])
-            force_jam = options.get("force_jamming", False) if options else False
+            force_jam = options.get("force_jamming", (np.random.random() < 0.6)) if options else (np.random.random() < 0.6)
             self.jamming.reset(force_jammed=force_jam, specific_mode=attack_mode)
 
         self.prev_distance = float(np.linalg.norm(self.drone.pos - self.target.position))
@@ -167,12 +172,26 @@ class CurriculumDroneEnv(gym.Env):
         current_distance = float(np.linalg.norm(drone_pos - target_pos))
         hit = current_distance < self.intercept_threshold
 
+        # --- Soft boundary handling (Stage 1 & 2) vs hard termination (Stage 3+) ---
+        # In early stages, clamp position to arena instead of terminating, so the agent
+        # gets more steps to learn — prevents 90%+ crash rate killing all learning.
+        ground_crash = bool(drone_pos[2] < 0.08)
         out_of_bounds = (
             drone_pos[0] < self.arena_x[0] or drone_pos[0] > self.arena_x[1] or
             drone_pos[1] < self.arena_y[0] or drone_pos[1] > self.arena_y[1] or
             drone_pos[2] < self.arena_z[0] or drone_pos[2] > self.arena_z[1]
         )
-        crash = bool(out_of_bounds or drone_pos[2] < 0.15)
+
+        if self.stage <= 2 and out_of_bounds and not ground_crash:
+            # Soft wall: reflect velocity, clamp position, apply small penalty — don't terminate
+            self.drone.pos[0] = np.clip(self.drone.pos[0], self.arena_x[0] + 0.1, self.arena_x[1] - 0.1)
+            self.drone.pos[1] = np.clip(self.drone.pos[1], self.arena_y[0] + 0.1, self.arena_y[1] - 0.1)
+            self.drone.pos[2] = np.clip(self.drone.pos[2], self.arena_z[0] + 0.1, self.arena_z[1] - 0.1)
+            self.drone.vel *= -0.3  # Reflect and damp velocity
+            crash = False
+            out_of_bounds = False  # Reset after clamping
+        else:
+            crash = bool(out_of_bounds or ground_crash)
 
         terminated = bool(hit or crash)
         truncated = bool(self.step_count >= self.max_episode_steps)
@@ -215,7 +234,7 @@ class CurriculumDroneEnv(gym.Env):
         ]).astype(np.float32)
 
     def _compute_reward(self, current_distance: float, action: np.ndarray, hit: bool, crash: bool) -> float:
-        # Distance closure gradient
+        # Distance closure gradient (primary learning signal)
         closure = self.w_closure * (self.prev_distance - current_distance)
 
         # Line-of-sight closing velocity: v_rel . unit_los (positive when approaching target)
@@ -226,21 +245,25 @@ class CurriculumDroneEnv(gym.Env):
         closing_vel = float(np.dot(rel_vel, unit_los))
         closing_reward = 0.5 * np.clip(closing_vel, -1.0, 4.0)
 
-        # Upright attitude shaping (penalize excessive tilt, eliminates positive alive-bonus cheat)
+        # Upright attitude shaping (penalize excessive tilt, prevents upside-down hovering)
         g_body = self.drone.get_gravity_vector()
-        upright_penalty = -0.2 * float(max(0.0, 1.0 - g_body[2]))
+        upright_penalty = -0.3 * float(max(0.0, 1.0 - g_body[2]))
+
+        # Proximity shaping: dense gradient that increases strongly near the target
+        proximity_bonus = 0.5 / (current_distance + 0.1)  # grows as distance shrinks
 
         dist_cost = -self.w_dist_penalty * current_distance
-        hit_bonus = 150.0 if hit else 0.0
+        hit_bonus = self.w_hit if hit else 0.0
         jerk_cost = -self.w_jerk * float(np.sum((action - self.prev_action) ** 2))
 
         jam_penalty = 0.0
         if self.jamming.is_jammed:
             jam_penalty = -self.w_jam_drift * current_distance
 
-        crash_cost = -25.0 if crash else 0.0
+        crash_cost = -self.w_crash if crash else 0.0
 
-        return float(closure + closing_reward + upright_penalty + dist_cost + hit_bonus + jerk_cost + jam_penalty + crash_cost)
+        return float(closure + closing_reward + upright_penalty + proximity_bonus +
+                     dist_cost + hit_bonus + jerk_cost + jam_penalty + crash_cost)
 
     def _get_info(self, current_distance: float, hit: bool, crash: bool) -> dict:
         return {

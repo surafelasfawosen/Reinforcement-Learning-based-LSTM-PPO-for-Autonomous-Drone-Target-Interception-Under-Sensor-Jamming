@@ -210,7 +210,8 @@ class DroneAntiJammingEnv(gym.Env):
         g_body = self.drone.get_gravity_vector()
         upright_penalty = -0.2 * float(max(0.0, 1.0 - g_body[2]))
 
-        # 4. Stand-off proximity gradient (penalizes lingering away from target)
+        # 4. Stand-off proximity gradient & dense hyperbolic shaping
+        proximity_bonus = 0.5 / (current_distance + 0.1)
         dist_cost = -0.05 * current_distance
 
         # 5. Terminal interception bonus
@@ -228,8 +229,8 @@ class DroneAntiJammingEnv(gym.Env):
         # 8. Controlled crash penalty (avoids policy paralysis)
         crash_penalty = -25.0 if crash else 0.0
 
-        total_reward = (closure_reward + closing_reward + upright_penalty + dist_cost +
-                        hit_bonus + jerk_penalty + jam_penalty + crash_penalty)
+        total_reward = (closure_reward + closing_reward + upright_penalty + proximity_bonus +
+                        dist_cost + hit_bonus + jerk_penalty + jam_penalty + crash_cost)
         return float(total_reward)
 
     def _get_info(self, current_distance: float, hit: bool, crash: bool) -> dict:

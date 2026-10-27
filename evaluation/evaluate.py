@@ -37,6 +37,7 @@ def evaluate_agent(
     from environment.jamming_model import JammingMode
     env = DroneAntiJammingEnv(domain_randomization=False)
     if specific_jamming_mode is not None:
+        env.default_jamming_mode = specific_jamming_mode
         env.jamming.default_mode = specific_jamming_mode
     episode_metrics_list = []
     sample_trajectories = []
@@ -82,7 +83,7 @@ def evaluate_agent(
                 "target_pos": info["target_pos"].tolist(),
                 "distance": float(info["distance"]),
                 "J_flag": int(info["J_flag"]),
-                "action": action.tolist()
+                "action": np.array(action).flatten().tolist()
             }
             ep_trajectory.append(pt_info)
 

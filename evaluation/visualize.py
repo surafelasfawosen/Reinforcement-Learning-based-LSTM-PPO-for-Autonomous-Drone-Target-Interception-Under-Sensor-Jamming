@@ -105,8 +105,25 @@ def plot_tracking_error_timeseries(save_name: str = "tracking_error_timeseries.p
     with open(traj_path, "rb") as f:
         trajs = pickle.load(f)
 
-    b_traj = trajs["Baseline FFN-PPO (Jammed)"][0]["trajectory"]
-    l_traj = trajs["Proposed LSTM-PPO (Jammed)"][0]["trajectory"]
+    b_traj = None
+    for item in trajs.get("Baseline FFN-PPO (Jammed)", []):
+        if len(item.get("trajectory", [])) > 1:
+            b_traj = item["trajectory"]
+            break
+    if not b_traj and trajs.get("Baseline FFN-PPO (Jammed)"):
+        b_traj = trajs["Baseline FFN-PPO (Jammed)"][0]["trajectory"]
+
+    l_traj = None
+    for item in trajs.get("Proposed LSTM-PPO (Jammed)", []):
+        if len(item.get("trajectory", [])) > 1:
+            l_traj = item["trajectory"]
+            break
+    if not l_traj and trajs.get("Proposed LSTM-PPO (Jammed)"):
+        l_traj = trajs["Proposed LSTM-PPO (Jammed)"][0]["trajectory"]
+
+    if not b_traj or not l_traj:
+        print("[WARN] Trajectories are empty. Skipping timeseries plot.")
+        return
 
     b_steps = [p["step"] for p in b_traj]
     b_dists = [p["distance"] for p in b_traj]
@@ -161,8 +178,25 @@ def plot_3d_flight_trajectories(save_name: str = "trajectory_3d_comparison.png")
     with open(traj_path, "rb") as f:
         trajs = pickle.load(f)
 
-    b_traj = trajs["Baseline FFN-PPO (Jammed)"][0]["trajectory"]
-    l_traj = trajs["Proposed LSTM-PPO (Jammed)"][0]["trajectory"]
+    b_traj = None
+    for item in trajs.get("Baseline FFN-PPO (Jammed)", []):
+        if len(item.get("trajectory", [])) > 1:
+            b_traj = item["trajectory"]
+            break
+    if not b_traj and trajs.get("Baseline FFN-PPO (Jammed)"):
+        b_traj = trajs["Baseline FFN-PPO (Jammed)"][0]["trajectory"]
+
+    l_traj = None
+    for item in trajs.get("Proposed LSTM-PPO (Jammed)", []):
+        if len(item.get("trajectory", [])) > 1:
+            l_traj = item["trajectory"]
+            break
+    if not l_traj and trajs.get("Proposed LSTM-PPO (Jammed)"):
+        l_traj = trajs["Proposed LSTM-PPO (Jammed)"][0]["trajectory"]
+
+    if not b_traj or not l_traj:
+        print("[WARN] Trajectories are empty. Skipping 3D plot.")
+        return
 
     b_pos = np.array([p["drone_pos"] for p in b_traj])
     l_pos = np.array([p["drone_pos"] for p in l_traj])
@@ -222,8 +256,8 @@ def plot_radar_performance_profile(save_name: str = "radar_performance_profile.p
         baseline_scores = eval_data["radar_scores"]["baseline_scores"]
         lstm_scores = eval_data["radar_scores"]["lstm_scores"]
     else:
-        base_jam = eval_data["Baseline FFN-PPO (Jammed)"]
-        lstm_jam = eval_data["Proposed LSTM-PPO (Jammed)"]
+        base_jam = eval_data.get("Baseline FFN-PPO (Jammed)", {})
+        lstm_jam = eval_data.get("Proposed LSTM-PPO (Jammed)", {})
         baseline_scores = [45.0, 64.7, 30.0, 82.0, 43.2]
         lstm_scores = [54.0, 56.0, 88.0, 76.2, 59.3]
 

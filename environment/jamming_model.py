@@ -32,7 +32,7 @@ class JammingModel:
         drift_rate: float = 0.05,
         p_jam_start: float = 0.015,
         p_jam_recover: float = 0.04,
-        warmup_steps: int = 100,
+        warmup_steps: int = 25,
         default_mode: JammingMode = JammingMode.GAUSSIAN
     ):
         self.noise_std = noise_std
@@ -97,7 +97,8 @@ class JammingModel:
         # Markov transition logic for spontaneous jamming
         if np.random.random() < self.p_jam_start:
             self.is_jammed = True
-            self.active_mode = self.default_mode
+            if self.active_mode == JammingMode.NONE:
+                self.active_mode = self.default_mode
             self.jamming_step_counter = 0
             self.accumulated_drift = np.zeros(3, dtype=np.float32)
 
