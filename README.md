@@ -1,4 +1,4 @@
-# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/>  Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
+# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/> 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
 
 ### A Deep Recurrent Reinforcement Learning Framework for Resilient UAV Target Pursuit in GPS-Denied & Adversarial Electronic Warfare Environments
 
@@ -16,7 +16,7 @@
 
 ## 📌 Executive Summary
 
-Autonomous unmanned aerial vehicle (UAV) interception of dynamic airborne targets is a pivotal challenge in modern aerospace defense, airspace interdiction, and counter-UAS operations. In contested airspace, hostile assets deploy active **Electronic Warfare (EW)** countermeasures including wideband radio-frequency (RF) jamming, Global Navigation Satellite System (GNSS) spoofing, sensor blackouts, and deceptive clock drift.
+Autonomous unmanned aerial vehicle (UAV) interception of dynamic airborne targets is a pivotal challenge in modern aerospace defense, airspace interdiction, and counter-UAS operations. In contested airspace, hostile assets deploy active **Electronic Warfare (EW)** countermeasures—including wideband radio-frequency (RF) jamming, Global Navigation Satellite System (GNSS) spoofing, sensor blackouts, and deceptive clock drift.
 
 Traditional autopilots (PID, LQR) and standard **memoryless deep reinforcement learning algorithms** (such as standard Feedforward PPO) operate under the **Markovian assumption** of full state observability. When target coordinates are abruptly spoofed or wiped out by jamming, feedforward policies immediately execute erratic control commands, leading to violent actuator chattering, uncontrolled flight divergence, and fatal crashes.
 
@@ -38,7 +38,7 @@ Traditional autopilots (PID, LQR) and standard **memoryless deep reinforcement l
     • Violent motor chattering & tilt flip         • Recurrent memory integrates flight momentum
     • Trajectory divergence & boundary crash       • Emergent inertial dead-reckoning via IMU
                       │                                               │
-               0% - 12% Success                              80% - 90% Interception
+              ❌ 0% - 12% Success                             ✅ 80% - 90% Interception
 ```
 
 ### 1. The Markovian Trap
@@ -256,7 +256,7 @@ Reinforcement-Learning-based-LSTM-PPO-for-Autonomous-Drone-Target-Interception-U
 │   ├── baseline_ppo.zip          # Trained Feedforward PPO baseline checkpoint
 │   ├── eval_results.json         # Full empirical benchmark metric logs
 │   └── sample_trajectories.pkl   # High-resolution flight coordinate trajectories
-├── complete_pipeline.ipynb       # Self-contained end-to-end interactive research notebook
+├── autonomous_drone_target_interception_lstm_ppo.ipynb # Self-contained end-to-end interactive research notebook
 ├── requirements.txt              # Core Python dependencies
 ├── .gitignore                    # Git ignore configuration
 └── README.md                     # Comprehensive project documentation
@@ -292,7 +292,7 @@ pip install -r requirements.txt
 ### Option A: Interactive Jupyter Notebook (Recommended)
 Open the complete self-contained research pipeline:
 ```bash
-jupyter notebook complete_pipeline.ipynb
+jupyter notebook autonomous_drone_target_interception_lstm_ppo.ipynb
 ```
 From the top menu, select **Cell** ➔ **Run All**. The notebook will:
 1. Verify PyTorch, Gymnasium, and compute device (CUDA/CPU).
