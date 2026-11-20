@@ -1,9 +1,9 @@
-# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/> <img src="assets/insa_logo.jpg" alt="INSA Logo" width="28" style="vertical-align: middle;"/> 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
+# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/> <img src="assets/insa_logo.jpg" alt="INSA Logo" width="28" style="vertical-align: middle;"/>  Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
 
 ### A Deep Recurrent Reinforcement Learning Framework for Resilient UAV Target Pursuit in GPS-Denied & Adversarial Electronic Warfare Environments
 
 **Developer & Author:** [Surafel Asfawosen](https://github.com/surafelasfawosen) <img src="https://flagcdn.com/20x15/et.png" alt="Ethiopia" width="18" style="vertical-align: middle;"/> (Ethiopia)  
-**Institutional Context & Collaboration:** In collaboration with the **Information Network Security Administration (INSA)** <img src="assets/insa_logo.jpg" alt="INSA Logo" width="20" style="vertical-align: middle;"/>  
+**Institutional project **  **Information Network Security Administration (INSA)** <img src="assets/insa_logo.jpg" alt="INSA Logo" width="20" style="vertical-align: middle;"/>  
 **Project Domain:** Autonomous Guidance, Navigation & Control (GNC) • Deep Recurrent RL • Electronic Warfare (EW) Resilient Robotics • Adversarial POMDPs  
 
 [![Ethiopia](https://img.shields.io/badge/Country-Ethiopia-009A44.svg)](https://en.wikipedia.org/wiki/Ethiopia)
