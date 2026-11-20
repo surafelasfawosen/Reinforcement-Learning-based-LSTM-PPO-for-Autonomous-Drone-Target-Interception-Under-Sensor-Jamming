@@ -3,11 +3,11 @@
 ### A Deep Recurrent Reinforcement Learning Framework for Resilient UAV Target Pursuit in GPS-Denied & Adversarial Electronic Warfare Environments
 
 **Developer & Author:** [Surafel Asfawosen](https://github.com/surafelasfawosen) <img src="https://flagcdn.com/20x15/et.png" alt="Ethiopia" width="18" style="vertical-align: middle;"/> (Ethiopia)  
-**Institutional project **  **Information Network Security Administration (INSA)** <img src="assets/insa_logo.jpg" alt="INSA Logo" width="20" style="vertical-align: middle;"/>  
+**Project Program:** **INSA Summer Camp Project** • Information Network Security Administration (INSA) <img src="assets/insa_logo.jpg" alt="INSA Logo" width="20" style="vertical-align: middle;"/>  
 **Project Domain:** Autonomous Guidance, Navigation & Control (GNC) • Deep Recurrent RL • Electronic Warfare (EW) Resilient Robotics • Adversarial POMDPs  
 
 [![Ethiopia](https://img.shields.io/badge/Country-Ethiopia-009A44.svg)](https://en.wikipedia.org/wiki/Ethiopia)
-[![Affiliation](https://img.shields.io/badge/Affiliation-INSA%20Ethiopia-003366.svg)](https://www.insa.gov.et/)
+[![INSA Summer Camp](https://img.shields.io/badge/Project-INSA%20Summer%20Camp-003366.svg)](https://www.insa.gov.et/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 [![Gymnasium](https://img.shields.io/badge/Gymnasium-v1.0+-008000.svg)](https://gymnasium.farama.org/)
@@ -18,17 +18,20 @@
 
 ## 📌 Executive Summary
 
+### The Problem That Occurs
 Autonomous unmanned aerial vehicle (UAV) interception of dynamic airborne targets is a critical capability in aerospace defense, border surveillance, and counter-unmanned aircraft systems (C-UAS). In modern contested airspace, hostile airborne assets deploy aggressive **Electronic Warfare (EW)** countermeasures—including radio-frequency (RF) jamming, Global Navigation Satellite System (GNSS/GPS) spoofing, sensor signal blackouts, and deceptive clock drift.
 
+### The Traditional Way & Why It Fails
 Traditional autopilots (PID, LQR) and standard **memoryless deep reinforcement learning algorithms** (such as standard Feedforward PPO) operate under the **Markovian assumption** of complete state observability. When target coordinates are abruptly spoofed or wiped out by electronic jamming, memoryless controllers immediately execute extreme, erratic control commands. This causes violent actuator chattering, motor saturation, uncontrolled flight divergence, and catastrophic ground crashes.
 
-**The Solution:** This project develops an end-to-end **Recurrent Proximal Policy Optimization (LSTM-PPO)** architecture formulated under an adversarial **Partially Observable Markov Decision Process (POMDP)**. By coupling corrupted external Line-of-Sight target vectors with **passive, unjammable onboard Inertial Measurement Unit (IMU)** telemetry and body-projected gravity vectors, a 2-layer stacked LSTM network develops **emergent inertial dead-reckoning**. The agent learns to dynamically gate out deceptive sensor telemetry, integrate flight momentum, and sustain high-speed kinetic interception across all 4 electronic warfare attack modes.
+### The Solution Created: Recurrent LSTM-PPO in Adversarial POMDPs
+This project develops an end-to-end **Recurrent Proximal Policy Optimization (LSTM-PPO)** architecture formulated under an adversarial **Partially Observable Markov Decision Process (POMDP)**. By coupling corrupted external Line-of-Sight target vectors with **passive, unjammable onboard Inertial Measurement Unit (IMU)** telemetry and body-projected gravity vectors, a 2-layer stacked LSTM network develops **emergent inertial dead-reckoning**. The agent learns to dynamically gate out deceptive sensor telemetry, integrate flight momentum, and sustain high-speed kinetic interception across all 4 electronic warfare attack modes.
 
 ---
 
-## 💡 The Core Concept Explained Simply (For Non-Specialists & Reviewers)
+## 💡 Operational Overview: The Challenge and The Breakthrough
 
-To understand this research without requiring an advanced background in deep reinforcement learning or guidance, navigation, and control (GNC), consider this real-world analogy:
+In contested electromagnetic airspace, autonomous interdiction relies on the fundamental distinction between memoryless reactive control and recurrent inertial policies:
 
 ```
 [Adversary Electronic Warfare Attack] ──► False Coordinates Injected / Vision Lost
@@ -38,45 +41,39 @@ To understand this research without requiring an advanced background in deep rei
       Standard Drone Controller                                         Our LSTM-PPO Interceptor
          ("No Memory" Agent)                                              ("With Memory" Agent)
                    │                                                                 │
-  • Acts only on what it sees RIGHT NOW.                          • Has an internal memory of past trajectory.
-  • When false feed says "Target jumped 8m left!",                 • Senses: "My target cannot physically jump 8m in 0.02s!"
-    it jerks violently to the left.                               • Relies on unjammable internal balance (IMU & gravity).
-  • Flips upside down and crashes into the ground.                • Smoothly continues on pursuit path (dead-reckoning).
+  • Acts only on what it sees RIGHT NOW.                          • Maintains continuous temporal memory of trajectory.
+  • Reacts instantly to fake coordinates (e.g. 8m spike).         • Recognizes false telemetries that violate dynamics.
+  • Motor saturation, tilt flip, and fatal ground crash.          • Relies on unjammable internal IMU and body gravity.
+  • Flight control diverges within milliseconds.                  • Sustains stable dead-reckoning pursuit to intercept.
                    │                                                                 │
         ❌ 0% - 12% Success Rate                                          ✅ 70% - 90% Success Rate
 ```
 
-### 1. What is an Interception Drone?
-An interception drone is an autonomous quadrotor sent to track and physically neutralize an unauthorized or hostile aerial target (such as an enemy reconnaissance drone). To succeed, the interceptor must maneuver in 3D space, close the distance at high velocity, and make contact within an exact precision radius (e.g., within $0.35\,\text{m}$).
+### 1. Interception Mission Objective
+The interceptor is an autonomous 6-DOF quadrotor tasked with tracking, pursuing, and neutralizing an evasive aerial target in 3D space. To record a verified mission interception, the drone must close distance under high velocity and establish kinetic interception within an exact spatial threshold ($0.35\,\text{m}$) without colliding with arena boundaries or stalling.
 
-### 2. What is Electronic Warfare (Sensor Jamming & Spoofing)?
-In combat, the enemy drone does not fly defenselessly. It emits high-powered electromagnetic signals designed to sabotage the interceptor's sensors:
-* **GPS Spoofing:** Broadcasts false coordinate signals, tricking the interceptor into thinking the target has instantly teleported meters away.
-* **RF Noise / Jamming:** Blasts static and noise, making sensor readings wildly jittery.
-* **Sensor Blackout:** Completely cuts off the incoming coordinate telemetry, returning all zeros.
-* **Creeping Drift:** Slowly alters the apparent target coordinate over time, leading the interceptor astray like a digital mirage.
+### 2. Adversarial Electronic Warfare Threat Profiles
+Hostile aerial assets deploy active electromagnetic countermeasures to deceive guidance algorithms:
+* **GPS Spoofing:** Broadcasts deceptive coordinate vectors, producing instantaneous apparent coordinate jumps ($\pm 8.0\,\text{m}$).
+* **RF Barrage Jamming:** Radiates wideband noise that severely degrades the relative positioning signal-to-noise ratio.
+* **Sensor Blackout:** Completely cuts off incoming target coordinates ($\mathbf{0}_{3\times 1}$ signal loss).
+* **Cumulative Creeping Drift:** Injects a subtle, ramping positional bias over time, gradually misleading pursuit trajectories.
 
-### 3. Why Do Standard AI Autopilots Crash? (The "Memoryless Trap")
-Standard reinforcement learning and classic flight controllers are **memoryless** (Markovian). At every 20-millisecond cycle ($50\,\text{Hz}$), they make decisions based **only on the instantaneous sensor reading**. 
-* When the adversary injects a fake coordinate spike ($8\,\text{m}$ to the right), the memoryless drone believes it instantly.
-* It slams maximum power to its left motors, tilting over at a violent $60^\circ$ angle.
-* By the time the spike disappears, the drone is already spinning out of control and crashes into the ground.
+### 3. Failure Mode of Memoryless Policies (The Markovian Collapse)
+Traditional control loops and feedforward neural policies compute control actions strictly from the instantaneous observation $a_t \sim \pi(a_t \mid o_t)$. When hostile jamming injects sudden coordinate shifts, memoryless policies possess zero temporal context to detect anomaly signatures. The controller instantly commands maximum angular rates toward the ghost target, rolling the quadrotor past recovery angles and initiating high-velocity impact into ground or boundaries.
 
-### 4. Our Solution: The "Inner Ear" Breakthrough (Recurrent Memory + Passive Physics)
-Humans can close their eyes while running and still maintain their forward stride without falling. Why? Because our **inner ear** (vestibular system) senses our balance and acceleration, and our **brain remembers** which way we were moving.
+### 4. Recurrent State Fusion & Inertial Dead-Reckoning
+To neutralize electronic deception, our framework fuses external observations with passive, unjammable onboard physics:
+* **Unjammable Inertial Sensing:** Onboard 3-axis gyroscopes, body accelerometers, and gravity vector projections ($\mathbf{g}_{\text{body}} = R^\top [0, 0, 1]^\top$) operate purely internally and cannot be jammed from distance.
+* **Latent Recurrent Core:** A 2-layer stacked LSTM network maintains temporal hidden states $(h_t, c_t)$ encoding flight momentum and target movement histories.
+* **Emergent Dead-Reckoning:** When jamming flags activate or coordinate inputs jump erratically, the LSTM gates attenuate the corrupted feed. The policy relies on uncorrupted internal inertial states to project the target's flight vector and maintain pursuit until interception.
 
-We designed our AI interceptor to do the exact same thing:
-1. **Unjammable Sensors:** We equipped the drone with an onboard **Inertial Measurement Unit (IMU)** and an accelerometer that measures the **gravity vector**. Because these sensors are purely internal and passive, no adversary can jam or spoof them from a distance.
-2. **Artificial Memory (LSTM Neural Network):** We embedded a 2-layer Long Short-Term Memory (LSTM) recurrent network into the flight controller. 
-3. **Emergent Dead-Reckoning:** When electronic jamming strikes, the LSTM automatically detects that the incoming sensor signals violate physical laws. It gates out the corrupted feed and flies using **inertial dead-reckoning**—maintaining pursuit along the target's estimated trajectory until interception is achieved.
-
-### 5. The "Flight School" (Curriculum Learning)
-A 6-DOF quadrotor drone is naturally unstable. If you drop a novice drone pilot into a combat dogfight on day one, they will crash in 3 seconds and learn nothing (**0% intercept rate exploration collapse**).
-To train our AI agent from scratch, we designed an automated **4-Stage Flight School (Curriculum Learning)**:
-* **Stage 1 (Hover & Touch):** Target is stationary only $0.4 - 1.2\,\text{m}$ away with a generous $1.0\,\text{m}$ capture zone. The drone quickly learns basic hover balance and gets positive reinforcement on episode 1.
-* **Stage 2 (Arena Transit):** Target is placed across the arena ($1.5 - 3.0\,\text{m}$). The drone learns how to bank, accelerate, and decelerate accurately.
-* **Stage 3 (Moving Targets):** Target flies dynamically across the arena. The drone learns lead pursuit and dynamic tracking.
-* **Stage 4 (Full Electronic Combat):** The target maneuvers evasively while activating all 4 electronic warfare jamming modes. The drone masters resilient inertial dead-reckoning under heavy adversarial jamming.
+### 5. Progressive Curriculum Learning (Resolving Exploration Failure)
+An untrained quadrotor is an open-loop unstable physical system. Direct combat deployment against evasive targets causes early crashes within 15 timesteps, yielding an exploration collapse and **0.0% interception rate**. We resolve this by structuring training across a **4-Stage Progressive Curriculum**:
+* **Stage 1 (Close Hover & Intercept):** Standoff $0.4 - 1.2\,\text{m}$ with a generous $1.0\,\text{m}$ capture threshold, allowing the agent to discover attitude stabilization and receive positive rewards from initial episodes.
+* **Stage 2 (Full-Arena Transit):** Standoff $1.5 - 3.0\,\text{m}$ with a $0.6\,\text{m}$ threshold, developing high-speed linear transit and braking control.
+* **Stage 3 (Dynamic Target Pursuit):** Targets execute continuous linear velocity maneuvers with wall restitution, training dynamic lead pursuit.
+* **Stage 4 (Full Electronic Combat):** Targets execute 3D sinusoidal weaves under active multi-mode electronic warfare jamming, achieving resilient combat autonomy.
 
 ---
 
@@ -428,6 +425,7 @@ If this framework or codebase aids your research in autonomous aerial robotics, 
   author = {Surafel Asfawosen},
   title = {Anti-Jamming Drone Target Interception using Recurrent PPO in Adversarial POMDPs},
   year = {2026},
+  note = {INSA Summer Camp Project},
   institution = {Information Network Security Administration (INSA)},
   howpublished = {\url{https://github.com/surafelasfawosen/Reinforcement-Learning-based-LSTM-PPO-for-Autonomous-Drone-Target-Interception-Under-Sensor-Jamming}}
 }
