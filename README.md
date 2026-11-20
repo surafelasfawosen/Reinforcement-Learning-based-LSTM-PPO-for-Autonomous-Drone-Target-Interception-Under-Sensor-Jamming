@@ -1,9 +1,9 @@
-# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/> <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/Logo_of_Ethiopian_INSA.png" alt="INSA Logo" width="28" style="vertical-align: middle;"/> 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
+# <img src="https://flagcdn.com/32x24/et.png" alt="Ethiopia Flag" width="28" style="vertical-align: middle;"/> <img src="assets/insa_logo.jpg" alt="INSA Logo" width="28" style="vertical-align: middle;"/> 🚁 Anti-Jamming Drone Interception using Recurrent PPO (LSTM-PPO)
 
 ### A Deep Recurrent Reinforcement Learning Framework for Resilient UAV Target Pursuit in GPS-Denied & Adversarial Electronic Warfare Environments
 
 **Developer & Author:** [Surafel Asfawosen](https://github.com/surafelasfawosen) <img src="https://flagcdn.com/20x15/et.png" alt="Ethiopia" width="18" style="vertical-align: middle;"/> (Ethiopia)  
-**Institutional Context & Collaboration:** In collaboration with the **Information Network Security Administration (INSA)** <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/Logo_of_Ethiopian_INSA.png" alt="INSA Logo" width="18" style="vertical-align: middle;"/>  
+**Institutional Context & Collaboration:** In collaboration with the **Information Network Security Administration (INSA)** <img src="assets/insa_logo.jpg" alt="INSA Logo" width="20" style="vertical-align: middle;"/>  
 **Project Domain:** Autonomous Guidance, Navigation & Control (GNC) • Deep Recurrent RL • Electronic Warfare (EW) Resilient Robotics • Adversarial POMDPs  
 
 [![Ethiopia](https://img.shields.io/badge/Country-Ethiopia-009A44.svg)](https://en.wikipedia.org/wiki/Ethiopia)
@@ -13,23 +13,6 @@
 [![Gymnasium](https://img.shields.io/badge/Gymnasium-v1.0+-008000.svg)](https://gymnasium.farama.org/)
 [![Stable-Baselines3](https://img.shields.io/badge/SB3--Contrib-RecurrentPPO-blueviolet.svg)](https://sb3-contrib.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
----
-
-## 📑 Table of Contents
-1. [Executive Summary](#-executive-summary)
-2. [The Core Concept Explained Simply (For Non-Specialists & Reviewers)](#-the-core-concept-explained-simply-for-non-specialists--reviewers)
-3. [Theoretical & Mathematical Formulation (Adversarial POMDP)](#-theoretical--mathematical-formulation-adversarial-pomdp)
-4. [Unjammable Passive Sensing & Observation Vector](#-unjammable-passive-sensing--observation-vector)
-5. [The 4 Adversarial Electronic Warfare (EW) Attack Modes](#-the-4-adversarial-electronic-warfare-ew-attack-modes)
-6. [4-Stage Progressive Curriculum Learning](#-4-stage-progressive-curriculum-learning)
-7. [Multi-Objective Guidance Reward Function](#-multi-objective-guidance-reward-function)
-8. [Empirical Evaluation & Benchmark Results](#-empirical-evaluation--benchmark-results)
-9. [Publication Figures & Deep Visual Interpretation](#-publication-figures--deep-visual-interpretation)
-10. [Repository Structure](#-repository-structure)
-11. [Installation & Execution Guide](#-installation--execution-guide)
-12. [Citation & Academic Attribution](#-citation--academic-attribution)
-13. [License](#-license)
 
 ---
 
@@ -347,6 +330,8 @@ All figures are automatically generated from empirical flight telemetry logs (`e
 
 ```
 Reinforcement-Learning-based-LSTM-PPO-for-Autonomous-Drone-Target-Interception-Under-Sensor-Jamming/
+├── assets/
+│   └── insa_logo.jpg             # Information Network Security Administration (INSA) insignia
 ├── environment/
 │   ├── __init__.py               # Registers 'DroneAntiJammingEnv-v0' & 'CurriculumDroneEnv-v0'
 │   ├── drone_env.py              # Main POMDP Gym environment (13-D body state, proximity shaping)
