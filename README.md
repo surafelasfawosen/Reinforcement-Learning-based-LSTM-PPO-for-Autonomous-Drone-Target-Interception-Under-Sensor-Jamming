@@ -50,28 +50,28 @@ In contested electromagnetic airspace, autonomous interdiction relies on the fun
 ```
 
 ### 1. Interception Mission Objective
-The interceptor is an autonomous 6-DOF quadrotor tasked with tracking, pursuing, and neutralizing an evasive aerial target in 3D space. To record a verified mission interception, the drone must close distance under high velocity and establish kinetic interception within an exact spatial threshold ($0.35\,\text{m}$) without colliding with arena boundaries or stalling.
+The interceptor is an autonomous 6-DOF quadrotor tasked with tracking, pursuing, and neutralizing an evasive aerial target in 3D space. To record a verified mission interception, the drone must close distance under high velocity and establish kinetic interception within an exact spatial threshold (0.35 m) without colliding with arena boundaries or stalling.
 
 ### 2. Adversarial Electronic Warfare Threat Profiles
 Hostile aerial assets deploy active electromagnetic countermeasures to deceive guidance algorithms:
-* **GPS Spoofing:** Broadcasts deceptive coordinate vectors, producing instantaneous apparent coordinate jumps ($\pm 8.0\,\text{m}$).
+* **GPS Spoofing:** Broadcasts deceptive coordinate vectors, producing instantaneous apparent coordinate jumps (±8.0 m).
 * **RF Barrage Jamming:** Radiates wideband noise that severely degrades the relative positioning signal-to-noise ratio.
-* **Sensor Blackout:** Completely cuts off incoming target coordinates ($\mathbf{0}_{3\times 1}$ signal loss).
+* **Sensor Blackout:** Completely cuts off incoming target coordinates ([0, 0, 0] signal loss).
 * **Cumulative Creeping Drift:** Injects a subtle, ramping positional bias over time, gradually misleading pursuit trajectories.
 
 ### 3. Failure Mode of Memoryless Policies (The Markovian Collapse)
-Traditional control loops and feedforward neural policies compute control actions strictly from the instantaneous observation $a_t \sim \pi(a_t \mid o_t)$. When hostile jamming injects sudden coordinate shifts, memoryless policies possess zero temporal context to detect anomaly signatures. The controller instantly commands maximum angular rates toward the ghost target, rolling the quadrotor past recovery angles and initiating high-velocity impact into ground or boundaries.
+Traditional control loops and feedforward neural policies compute control actions strictly from the instantaneous observation `a_t ~ π(a_t | o_t)`. When hostile jamming injects sudden coordinate shifts, memoryless policies possess zero temporal context to detect anomaly signatures. The controller instantly commands maximum angular rates toward the ghost target, rolling the quadrotor past recovery angles and initiating high-velocity impact into ground or boundaries.
 
 ### 4. Recurrent State Fusion & Inertial Dead-Reckoning
 To neutralize electronic deception, our framework fuses external observations with passive, unjammable onboard physics:
-* **Unjammable Inertial Sensing:** Onboard 3-axis gyroscopes, body accelerometers, and gravity vector projections ($\mathbf{g}_{\text{body}} = R^\top [0, 0, 1]^\top$) operate purely internally and cannot be jammed from distance.
-* **Latent Recurrent Core:** A 2-layer stacked LSTM network maintains temporal hidden states $(h_t, c_t)$ encoding flight momentum and target movement histories.
+* **Unjammable Inertial Sensing:** Onboard 3-axis gyroscopes, body accelerometers, and gravity vector projections (`g_body = R^T * [0, 0, 1]^T`) operate purely internally and cannot be jammed from distance.
+* **Latent Recurrent Core:** A 2-layer stacked LSTM network maintains temporal hidden states `(h_t, c_t)` encoding flight momentum and target movement histories.
 * **Emergent Dead-Reckoning:** When jamming flags activate or coordinate inputs jump erratically, the LSTM gates attenuate the corrupted feed. The policy relies on uncorrupted internal inertial states to project the target's flight vector and maintain pursuit until interception.
 
 ### 5. Progressive Curriculum Learning (Resolving Exploration Failure)
 An untrained quadrotor is an open-loop unstable physical system. Direct combat deployment against evasive targets causes early crashes within 15 timesteps, yielding an exploration collapse and **0.0% interception rate**. We resolve this by structuring training across a **4-Stage Progressive Curriculum**:
-* **Stage 1 (Close Hover & Intercept):** Standoff $0.4 - 1.2\,\text{m}$ with a generous $1.0\,\text{m}$ capture threshold, allowing the agent to discover attitude stabilization and receive positive rewards from initial episodes.
-* **Stage 2 (Full-Arena Transit):** Standoff $1.5 - 3.0\,\text{m}$ with a $0.6\,\text{m}$ threshold, developing high-speed linear transit and braking control.
+* **Stage 1 (Close Hover & Intercept):** Standoff 0.4 m – 1.2 m with a generous 1.0 m capture threshold, allowing the agent to discover attitude stabilization and receive positive rewards from initial episodes.
+* **Stage 2 (Full-Arena Transit):** Standoff 1.5 m – 3.0 m with a 0.6 m threshold, developing high-speed linear transit and braking control.
 * **Stage 3 (Dynamic Target Pursuit):** Targets execute continuous linear velocity maneuvers with wall restitution, training dynamic lead pursuit.
 * **Stage 4 (Full Electronic Combat):** Targets execute 3D sinusoidal weaves under active multi-mode electronic warfare jamming, achieving resilient combat autonomy.
 
@@ -81,35 +81,34 @@ An untrained quadrotor is an open-loop unstable physical system. Direct combat d
 
 In contested electronic environments, the interception engagement cannot be formulated as a standard Markov Decision Process because the agent cannot directly perceive the true state of the environment. Instead, it is rigorously formulated as an **Adversarial Partially Observable Markov Decision Process (POMDP)** defined by the 7-tuple:
 
-$$
-\mathcal{M} = \langle \mathcal{S}, \mathcal{A}, \mathcal{T}, \mathcal{R}, \Omega, \mathcal{O}, \gamma \rangle
-$$
+```text
+M = < S, A, T, R, Ω, O, γ >
+```
 
-### 1. True Physical State Space ($\mathcal{S} \in \mathbb{R}^{18}$)
+### 1. True Physical State Space (`S ∈ ℝ¹⁸`)
 The complete, uncorrupted physical state of the engagement in the inertial world frame:
 
-$$
-\mathbf{s}_t = \big[ \mathbf{p}_{\text{drone}}, \, \mathbf{v}_{\text{drone}}, \, \boldsymbol{\eta}_{\text{drone}}, \, \boldsymbol{\omega}_{\text{drone}}, \, \mathbf{p}_{\text{tgt}}, \, \mathbf{v}_{\text{tgt}} \big]^\top \in \mathbb{R}^{18}
-$$
+```text
+s_t = [ p_drone,  v_drone,  η_drone,  ω_drone,  p_target,  v_target ]^T  ∈ ℝ¹⁸
+```
 
-Where:
-* $\mathbf{p}_{\text{drone}} = [x_d, y_d, z_d]^\top \in \mathbb{R}^3$: Drone 3D position in the inertial world frame.
-* $\mathbf{v}_{\text{drone}} = [\dot{x}_d, \dot{y}_d, \dot{z}_d]^\top \in \mathbb{R}^3$: Drone linear velocity in the world frame.
-* $\boldsymbol{\eta}_{\text{drone}} = [\phi, \theta, \psi]^\top \in \mathbb{R}^3$: Drone attitude Euler angles (Roll, Pitch, Yaw).
-* $\boldsymbol{\omega}_{\text{drone}} = [p, q, r]^\top \in \mathbb{R}^3$: Drone angular velocities in the body-fixed frame.
-* $\mathbf{p}_{\text{tgt}} = [x_t, y_t, z_t]^\top \in \mathbb{R}^3$: Evasive target 3D position in the world frame.
-* $\mathbf{v}_{\text{tgt}} = [\dot{x}_t, \dot{y}_t, \dot{z}_t]^\top \in \mathbb{R}^3$: Evasive target velocity vector.
+* `p_drone = [x_d, y_d, z_d]^T ∈ ℝ³`: Drone 3D position in the inertial world frame.
+* `v_drone = [vx_d, vy_d, vz_d]^T ∈ ℝ³`: Drone linear velocity in the world frame.
+* `η_drone = [φ, θ, ψ]^T ∈ ℝ³`: Drone attitude Euler angles (Roll, Pitch, Yaw).
+* `ω_drone = [p, q, r]^T ∈ ℝ³`: Drone angular velocities in the body-fixed frame.
+* `p_target = [x_t, y_t, z_t]^T ∈ ℝ³`: Evasive target 3D position in the world frame.
+* `v_target = [vx_t, vy_t, vz_t]^T ∈ ℝ³`: Evasive target 3D velocity vector.
 
-### 2. Continuous Action Space ($\mathcal{A} \in [-1, 1]^4$)
-The policy generates continuous 4-axis control commands executed by onboard low-level rate controllers at $50\,\text{Hz}$ ($\Delta t = 0.02\,\text{s}$):
+### 2. Continuous Action Space (`A ∈ [-1, 1]⁴`)
+The policy generates continuous 4-axis control commands executed by onboard low-level rate controllers at `50 Hz` (`Δt = 0.02 s`):
 
-$$
-\mathbf{a}_t = \big[ \omega_{\text{cmd}, \phi}, \, \omega_{\text{cmd}, \theta}, \, \omega_{\text{cmd}, \psi}, \, T_{\text{coll}} \big]^\top \in [-1, 1]^4
-$$
+```text
+a_t = [ ω_cmd_roll,  ω_cmd_pitch,  ω_cmd_yaw,  T_collective ]^T  ∈ [-1, 1]⁴
+```
 
-* $\omega_{\text{cmd}, \phi}, \omega_{\text{cmd}, \theta}$: Desired roll and pitch rate setpoints, scaled to physical limits $[-270^\circ/\text{s}, +270^\circ/\text{s}]$.
-* $\omega_{\text{cmd}, \psi}$: Desired yaw angular velocity setpoint $[-180^\circ/\text{s}, +180^\circ/\text{s}]$.
-* $T_{\text{coll}}$: Normalized collective rotor thrust command, mapping to physical specific thrust $[0.0, 2.2 \times g \cdot m_{\text{drone}}]$.
+* `ω_cmd_roll, ω_cmd_pitch`: Desired roll and pitch rate setpoints, scaled to physical limits `[-270°/s, +270°/s]`.
+* `ω_cmd_yaw`: Desired yaw angular velocity setpoint `[-180°/s, +180°/s]`.
+* `T_collective`: Normalized collective rotor thrust command, mapping to physical specific thrust `[0.0, 2.2 × hover_thrust]`.
 
 ---
 
@@ -117,48 +116,51 @@ $$
 
 External optical tracking, radio-frequency ranging, and satellite positioning feeds are vulnerable to external electronic interference. In contrast, **onboard inertial gyroscopes, linear accelerometers, and gravity vectors are purely internal physical measurements that cannot be jammed remotely**.
 
-The agent receives a **13-dimensional body-frame observation vector** $o_t \in \mathbb{R}^{13}$ projected through the direction cosine rotation matrix $R(\boldsymbol{\eta}) \in \text{SO}(3)$:
+The agent receives a **13-dimensional body-frame observation vector** `o_t ∈ ℝ¹³` projected through the direction cosine rotation matrix `R(η) ∈ SO(3)`:
 
-$$
-o_t = \begin{bmatrix}
-\tilde{\mathbf{p}}_{\text{rel}, \text{body}} \\[4pt]
-\mathbf{v}_{\text{drone}, \text{body}} \\[4pt]
-\boldsymbol{\omega}_{\text{drone}, \text{body}} \\[4pt]
-\mathbf{g}_{\text{body}} \\[4pt]
-J_{\text{flag}}
-\end{bmatrix} \in \mathbb{R}^{13}
-$$
+```text
+       ┌                                     ┐
+       │  p_rel_body    (Relative target pos)│  ->  3 dimensions (corrupted during jamming)
+       │  v_drone_body  (Linear body velocity)│ ->  3 dimensions (unjammable IMU telemetry)
+o_t =  │  w_drone_body  (Body angular rates)  │ ->  3 dimensions (unjammable 3-axis gyro)
+       │  g_body        (Projected gravity)  │  ->  3 dimensions (unjammable accelerometer)
+       │  J_flag        (Jamming status flag)│  ->  1 dimension  (ESM detector: 0 or 1)
+       └                                     ┘  Total: 13-D Observation Vector
+```
 
 ### Vector Breakdown:
-1. **Corrupted Relative Position ($\tilde{\mathbf{p}}_{\text{rel}, \text{body}} \in \mathbb{R}^3$):**  
-   The true Line-of-Sight target vector transformed from world frame to the drone's body frame and corrupted by the active electronic warfare channel $\boldsymbol{\epsilon}_{\text{EW}}$:
-   
-   $$
-   \tilde{\mathbf{p}}_{\text{rel}, \text{body}} = R^\top (\mathbf{p}_{\text{tgt}} - \mathbf{p}_{\text{drone}}) + \boldsymbol{\epsilon}_{\text{EW}}
-   $$
+1. **Relative Target Position (`p_rel_body ∈ ℝ³`):**  
+   The true Line-of-Sight target vector transformed from world frame to the drone's body frame and corrupted by the active electronic warfare channel `ε_EW`:
+   ```text
+   p_rel_body = R^T * (p_target - p_drone) + ε_EW
+   ```
 
-2. **Passive Linear Velocity in Body Axes ($\mathbf{v}_{\text{drone}, \text{body}} \in \mathbb{R}^3$):**  
-   Computed via onboard IMU integration: $\mathbf{v}_{\text{drone}, \text{body}} = R^\top \mathbf{v}_{\text{drone}}$.
-3. **Passive Angular Rates ($\boldsymbol{\omega}_{\text{drone}, \text{body}} \in \mathbb{R}^3$):**  
-   Direct onboard 3-axis gyro telemetry $[p, q, r]^\top$.
-4. **Body-Projected Gravity Vector ($\mathbf{g}_{\text{body}} \in \mathbb{R}^3$):**  
+2. **Passive Linear Velocity in Body Axes (`v_drone_body ∈ ℝ³`):**  
+   Computed via onboard IMU integration projected to body frame:
+   ```text
+   v_drone_body = R^T * v_drone_world
+   ```
+
+3. **Passive Angular Rates (`w_drone_body ∈ ℝ³`):**  
+   Direct onboard 3-axis gyro telemetry: `[p, q, r]^T` (roll, pitch, yaw rates).
+
+4. **Body-Projected Gravity Vector (`g_body ∈ ℝ³`):**  
    Measured directly by the onboard 3-axis accelerometer:
-   
-   $$
-   \mathbf{g}_{\text{body}} = R^\top \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix} = \begin{bmatrix} -\sin\theta \\ \cos\theta \sin\phi \\ \cos\theta \cos\phi \end{bmatrix}
-   $$
-   
+   ```text
+   g_body = R^T * [0, 0, 1]^T = [-sin(θ),  cos(θ)*sin(φ),  cos(θ)*cos(φ)]^T
+   ```
    *Significance:* Provides an unambiguous reference for vertical orientation, completely preventing the drone from entering inverted hovering states.
-5. **Electronic Support Measure Flag ($J_{\text{flag}} \in \{0, 1\}$):**  
-   Binary radio frequency power detection flag indicating active electromagnetic interference.
+
+5. **Electronic Support Measure Flag (`J_flag ∈ {0, 1}`):**  
+   Binary radio frequency power detection flag indicating active electromagnetic interference (`1 = Active Jamming`, `0 = Clean Signal`).
 
 ---
 
 ## 🛡️ The 4 Adversarial Electronic Warfare (EW) Attack Modes
 
-The adversary deploys 4 distinct electromagnetic interference profiles to corrupt the relative vector $\mathbf{p}_{\text{rel}}$:
+The adversary deploys 4 distinct electromagnetic interference profiles to corrupt the relative vector `p_rel`:
 
-```
+```text
 1. Gaussian Noise Barrage      2. Coordinate Spike Spoofing     3. Sensor Denial Blackout       4. Cumulative Creeping Drift
    ~~~~~~~~~~~~~~~~~~~~          │         ▲                      │                               │          ▲
   /\  /\  /\  /\  /\             │         │ Spike                │                               │         /
@@ -170,31 +172,27 @@ The adversary deploys 4 distinct electromagnetic interference profiles to corrup
 
 1. **Stochastic Gaussian Noise (Barrage RF Jamming):**  
    Wideband high-power radio-frequency noise that degrades sensor signal-to-noise ratio:
-   
-   $$
-   \tilde{\mathbf{p}}_{\text{rel}} = \mathbf{p}_{\text{rel}} + \boldsymbol{\eta}, \quad \boldsymbol{\eta} \sim \mathcal{N}\big(\mathbf{0}, \sigma^2 I_3\big), \quad \sigma = 2.5\,\text{m}
-   $$
+   ```text
+   p_rel_corrupted = p_rel + η,   where η ~ Normal(0, σ² * I_3),   σ = 2.5 meters
+   ```
 
 2. **Coordinate Spike Injection (Deceptive Spoofing):**  
    Adversary broadcasts high-power counterfeit signals that cause apparent instantaneous coordinate teleportation:
-   
-   $$
-   \tilde{\mathbf{p}}_{\text{rel}} \sim \mathcal{U}(-8.0\,\text{m}, +8.0\,\text{m})
-   $$
+   ```text
+   p_rel_corrupted ~ Uniform(-8.0 m, +8.0 m)
+   ```
 
 3. **Sensor Denial Blackout (Total Signal Loss):**  
    Target tracking telemetry is completely extinguished:
-   
-   $$
-   \tilde{\mathbf{p}}_{\text{rel}} = \mathbf{0}_{3 \times 1}
-   $$
+   ```text
+   p_rel_corrupted = [0.0, 0.0, 0.0]^T
+   ```
 
 4. **Cumulative Creeping Drift (Clock / Phase Deception):**  
    A deceptive creeping bias that slowly pulls the interceptor off-course without triggering threshold alarms:
-   
-   $$
-   \tilde{\mathbf{p}}_{\text{rel}}(t) = \mathbf{p}_{\text{rel}}(t) + \hat{\mathbf{d}} \cdot (v_{\text{drift}} \cdot \Delta t), \quad v_{\text{drift}} = 0.05\,\text{m/step}
-   $$
+   ```text
+   p_rel_corrupted(t) = p_rel(t) + d_direction * (v_drift * Δt),   where v_drift = 0.05 m/step
+   ```
 
 ---
 
@@ -204,12 +202,12 @@ To eliminate the exploration bottleneck and bootstrap stable flight dynamics, th
 
 | Stage | Milestone Name | Standoff Distance | Capture Radius | Target Maneuver Profile | Electronic Warfare Mode | Boundary Handling |
 | :---: | :--- | :---: | :---: | :--- | :--- | :--- |
-| **1** | **Close Hover & Intercept** | $0.4\,\text{m} - 1.2\,\text{m}$ | **$1.00\,\text{m}$** | Stationary hover | Clean sensors ($J_{\text{flag}} = 0$) | Soft velocity damping & reflection |
-| **2** | **Full-Arena Transit** | $1.5\,\text{m} - 3.0\,\text{m}$ | **$0.60\,\text{m}$** | Stationary across 3D arena | Clean sensors ($J_{\text{flag}} = 0$) | Soft velocity damping & reflection |
-| **3** | **Dynamic Target Pursuit** | $2.5\,\text{m} - 4.5\,\text{m}$ | **$0.45\,\text{m}$** | Linear motion ($0.8\,\text{m/s}$) + wall bounce | Mild Gaussian noise ($30\%$ prob) | Hard arena termination |
-| **4** | **Full Electronic Warfare** | $2.5\,\text{m} - 5.0\,\text{m}$ | **$0.35\,\text{m}$** | 3D Sinusoidal harmonic evasion | Active EW ($60\%$ prob, all 4 modes) | Hard arena termination |
+| **1** | **Close Hover & Intercept** | 0.4 m – 1.2 m | **1.00 m** | Stationary hover | Clean sensors (`J_flag = 0`) | Soft velocity damping & reflection |
+| **2** | **Full-Arena Transit** | 1.5 m – 3.0 m | **0.60 m** | Stationary across 3D arena | Clean sensors (`J_flag = 0`) | Soft velocity damping & reflection |
+| **3** | **Dynamic Target Pursuit** | 2.5 m – 4.5 m | **0.45 m** | Linear motion (0.8 m/s) + wall bounce | Mild Gaussian noise (30% prob) | Hard arena termination |
+| **4** | **Full Electronic Warfare** | 2.5 m – 5.0 m | **0.35 m** | 3D Sinusoidal harmonic evasion | Active EW (60% prob, all 4 modes) | Hard arena termination |
 
-> **Key Takeaway:** By providing generous capture tolerance ($1.0\,\text{m}$) and close proximity in Stage 1, the policy receives frequent positive reinforcement from episode 1, bootstrapping basic flight stabilization before difficulty increases.
+> **Key Takeaway:** By providing generous capture tolerance (1.0 m) and close proximity in Stage 1, the policy receives frequent positive reinforcement from episode 1, bootstrapping basic flight stabilization before difficulty increases.
 
 ---
 
@@ -217,21 +215,21 @@ To eliminate the exploration bottleneck and bootstrap stable flight dynamics, th
 
 The reward function balances rapid closure, flight stability, energy efficiency, and electronic warfare robustness:
 
-$$
-R_t = R_{\text{closure}} + R_{\text{los}} + R_{\text{upright}} + R_{\text{proximity}} + R_{\text{dist}} + R_{\text{hit}} + R_{\text{jerk}} + R_{\text{jam}} + R_{\text{crash}}
-$$
+```text
+R_total = R_closure + R_los + R_upright + R_proximity + R_dist + R_hit + R_jerk + R_jam + R_crash
+```
 
 | Term | Mathematical Definition | Physical Function & Rationale |
 | :--- | :--- | :--- |
-| **Distance Closure** | $R_{\text{closure}} = 3.0 \cdot (d_{t-1} - d_t)$ | Potential-based dense reward driving continuous spatial approach. |
-| **Line-of-Sight Velocity** | $R_{\text{los}} = 0.5 \cdot \text{clip}(\mathbf{v}_{\text{rel}} \cdot \hat{\mathbf{u}}_{\text{los}}, -1.0, 4.0)$ | Rewards true pursuit closing speed along the direct line-of-sight vector. |
-| **Upright Attitude** | $R_{\text{upright}} = -0.2 \cdot \max(0.0, 1.0 - g_{\text{body}, z})$ | Penalizes excessive tilt and eliminates inverted hovering exploits. |
-| **Hyperbolic Proximity** | $R_{\text{proximity}} = \frac{0.5}{d_t + 0.1}$ | Dense hyperbolic gradient providing sharp attraction near the target. |
-| **Standoff Distance** | $R_{\text{dist}} = -0.05 \cdot d_t$ | Linear penalty discouraging hovering or idling at long range. |
-| **Terminal Interception** | $R_{\text{hit}} = +150.0 \cdot \mathbb{I}(d_t < r_{\text{threshold}})$ | Sparse goal-completion bonus upon successful kinetic interception. |
-| **Actuator Smoothness** | $R_{\text{jerk}} = -0.05 \cdot \|\mathbf{a}_t - \mathbf{a}_{t-1}\|^2$ | Penalizes rapid motor throttle variation, preventing actuator wear. |
-| **Jammed Drift Penalty** | $R_{\text{jam}} = -0.05 \cdot d_t \cdot \mathbb{I}(J_{\text{flag}} = 1)$ | Forces the policy to actively minimize distance during jamming events. |
-| **Controlled Crash Cost** | $R_{\text{crash}} = -25.0 \cdot \mathbb{I}(\text{crash})$ | Terminal penalty upon ground collision or arena boundary violation. |
+| **Distance Closure** | `R_closure = 3.0 * (d_{t-1} - d_t)` | Potential-based dense reward driving continuous spatial approach. |
+| **Line-of-Sight Velocity** | `R_los = 0.5 * clip(v_rel • u_los, -1.0, 4.0)` | Rewards true pursuit closing speed along the direct line-of-sight vector. |
+| **Upright Attitude** | `R_upright = -0.2 * max(0.0, 1.0 - g_body_z)` | Penalizes excessive tilt and eliminates inverted hovering exploits. |
+| **Hyperbolic Proximity** | `R_proximity = 0.5 / (d_t + 0.1)` | Dense hyperbolic gradient providing sharp attraction near the target. |
+| **Standoff Distance** | `R_dist = -0.05 * d_t` | Linear penalty discouraging hovering or idling at long range. |
+| **Terminal Interception** | `R_hit = +150.0  (if d_t < 0.35m)` | Sparse goal-completion bonus upon successful kinetic interception. |
+| **Actuator Smoothness** | `R_jerk = -0.05 * ||a_t - a_{t-1}||²` | Penalizes rapid motor throttle variation, preventing actuator wear. |
+| **Jammed Drift Penalty** | `R_jam = -0.05 * d_t * J_flag` | Forces the policy to actively minimize distance during jamming events. |
+| **Controlled Crash Cost** | `R_crash = -25.0  (on collision)` | Terminal penalty upon ground collision or arena boundary violation. |
 
 ---
 
@@ -243,10 +241,10 @@ The policies were empirically benchmarked over independent simulation rollouts e
 
 | Flight Scenario | Controller Architecture | Interception Success Rate | Crash Rate | Tracking RMSE | Final Miss Distance | Actuator Jerk | Operational Status |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Clean Sensors** | Baseline FFN-PPO | **100.0%** | **0.0%** | $2.39\,\text{m} \pm 0.47$ | $0.32\,\text{m}$ | $0.5906$ | Nominal clean pursuit |
-| **Clean Sensors** | Proposed LSTM-PPO | 80.0% | 15.0% | **$1.97\,\text{m} \pm 0.40$** | $0.62\,\text{m}$ | **0.3295** | High-efficiency smooth flight |
-| **Active Jamming** | Baseline FFN-PPO | 50.0% | 40.0% | $2.11\,\text{m} \pm 0.42$ | $1.30\,\text{m}$ | $4.3304$ | ❌ **Severe Jerk & Boundary Crashes** |
-| **Active Jamming** | **Proposed LSTM-PPO** | **70.0%** | **25.0%** | $2.12\,\text{m} \pm 0.41$ | **0.89 m** | **0.7729** | 🏆 **Resilient Dead-Reckoning Intercept** |
+| **Clean Sensors** | Baseline FFN-PPO | **100.0%** | **0.0%** | 2.39 m ± 0.47 | 0.32 m | 0.5906 | Nominal clean pursuit |
+| **Clean Sensors** | Proposed LSTM-PPO | 80.0% | 15.0% | **1.97 m ± 0.40** | 0.62 m | **0.3295** | High-efficiency smooth flight |
+| **Active Jamming** | Baseline FFN-PPO | 50.0% | 40.0% | 2.11 m ± 0.42 | 1.30 m | 4.3304 | ❌ **Severe Jerk & Boundary Crashes** |
+| **Active Jamming** | **Proposed LSTM-PPO** | **70.0%** | **25.0%** | 2.12 m ± 0.41 | **0.89 m** | **0.7729** | 🏆 **Resilient Dead-Reckoning Intercept** |
 
 ### Robustness Breakdown Across the 4 EW Attack Modes
 
@@ -286,10 +284,10 @@ All figures are automatically generated from empirical flight telemetry logs (`e
   <img src="results/figures/tracking_error_timeseries.png" alt="Figure 2: Tracking Error Timeseries" width="90%"/>
 </p>
 
-* **Visual Layout:** A dual-panel timeseries plot over $50\,\text{Hz}$ simulation steps. 
+* **Visual Layout:** A dual-panel timeseries plot over 50 Hz simulation steps. 
   * *Top Panel:* Euclidean distance to target over time for both controllers, with the active jamming duration highlighted in shaded amber.
   * *Bottom Panel:* Continuous 4-axis control commands (roll rate, pitch rate, yaw rate, collective thrust) executed by the LSTM policy.
-* **Deep Interpretation:** When electronic jamming activates at Step 25, the baseline controller experiences extreme control chattering, driving the drone away from the target. The LSTM controller smoothly gates the disturbance, holding a steady descent rate and completing kinetic interception at Step 76 within the required $0.35\,\text{m}$ capture boundary.
+* **Deep Interpretation:** When electronic jamming activates at Step 25, the baseline controller experiences extreme control chattering, driving the drone away from the target. The LSTM controller smoothly gates the disturbance, holding a steady descent rate and completing kinetic interception at Step 76 within the required 0.35 m capture boundary.
 
 ---
 
@@ -299,7 +297,7 @@ All figures are automatically generated from empirical flight telemetry logs (`e
 </p>
 
 * **Visual Layout:** A 3D spatial plot showing the continuous flight paths of the maneuvering target (black dashed line), the Baseline FFN-PPO drone (red line), and the Proposed LSTM-PPO drone (blue line) inside the arena.
-* **Deep Interpretation:** The target performs an evasive sinusoidal 3D flight path. When sensor spoofing occurs, the baseline drone swerves off-course and crashes into the arena perimeter with a **$2.32\,\text{m}$ miss gap** (marked with $\times$). The LSTM agent (blue path) successfully executes **inertial dead-reckoning**, tracking through the corrupted coordinate zone and intercepting the target cleanly at a **$0.34\,\text{m}$ capture radius** (marked with $\bullet$).
+* **Deep Interpretation:** The target performs an evasive sinusoidal 3D flight path. When sensor spoofing occurs, the baseline drone swerves off-course and crashes into the arena perimeter with a **2.32 m miss gap** (marked with [X]). The LSTM agent (blue path) successfully executes **inertial dead-reckoning**, tracking through the corrupted coordinate zone and intercepting the target cleanly at a **0.34 m capture radius** (marked with [•]).
 
 ---
 
@@ -309,7 +307,7 @@ All figures are automatically generated from empirical flight telemetry logs (`e
 </p>
 
 * **Visual Layout:** A 5-axis radar chart evaluating: *Interception Accuracy*, *Flight Smoothness*, *EW Resilience*, *Post-Jam Survival*, and *Energy Efficiency*.
-* **Deep Interpretation:** While the memoryless baseline scores poorly in smoothness ($0.0$) and resilience ($30.0$) due to motor saturation, the Proposed LSTM-PPO displays a balanced operational envelope, achieving **77.0 in electronic warfare resilience** and **84.9 in overall energy efficiency**.
+* **Deep Interpretation:** While the memoryless baseline scores poorly in smoothness (0.0) and resilience (30.0) due to motor saturation, the Proposed LSTM-PPO displays a balanced operational envelope, achieving **77.0 in electronic warfare resilience** and **84.9 in overall energy efficiency**.
 
 ---
 
